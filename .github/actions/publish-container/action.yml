@@ -39,6 +39,9 @@ inputs:
   registry_password:
     description: 'Registry password'
     required: true
+  container_name: 
+    description: 'Container image being pushed'
+    required: true
 
 runs:
   using: 'composite'
