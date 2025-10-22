@@ -30,8 +30,7 @@ spec:
         app: nvidia-dcgm
     spec:
       containers:
-        # TODO(ladithyav): replace this with an image from nvcr/ghcr
-      - image: lalitadithya/fake-dcgm:4.2.0
+      - image: ghcr.io/nvidia/nvsentinel-fake-dcgm:4.2.0
         name: nvidia-dcgm-ctr
       tolerations:
       - key: nvidia.com/gpu
