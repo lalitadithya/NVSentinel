@@ -16,9 +16,6 @@ test-ci:
 	kubectl get po -Ao wide
 	kubectl get no -o wide
 	$(MAKE) test
-	kubectl logs -l app.kubernetes.io/name=fault-remediation -n nvsentinel
-	kubectl logs -l app.kubernetes.io/name=node-drainer -n nvsentinel
-	kubectl logs -l app.kubernetes.io/name=fault-quarantine -n nvsentinel
 
 # Run end-to-end tests
 .PHONY: test
