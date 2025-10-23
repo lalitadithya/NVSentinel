@@ -37,17 +37,17 @@ tilt-ci:
 	@echo "Waiting for all deployments to be ready..."
 	@kubectl get deployments --all-namespaces --no-headers -o custom-columns=":metadata.namespace,:metadata.name" | while read ns name; do \
 		echo "Waiting for deployment $$name in namespace $$ns..."; \
-		kubectl rollout status deployment/$$name -n $$ns --timeout=300s; \
+		kubectl rollout status deployment/$$name -n $$ns --timeout=300s || exit 1; \
 	done
 	@echo "Waiting for all daemonsets to be ready..."
 	@kubectl get daemonsets --all-namespaces --no-headers -o custom-columns=":metadata.namespace,:metadata.name" | while read ns name; do \
 		echo "Waiting for daemonset $$name in namespace $$ns..."; \
-		kubectl rollout status daemonset/$$name -n $$ns --timeout=300s; \
+		kubectl rollout status daemonset/$$name -n $$ns --timeout=300s || exit 1; \
 	done
 	@echo "Waiting for all statefulsets to be ready..."
 	@kubectl get statefulsets --all-namespaces --no-headers -o custom-columns=":metadata.namespace,:metadata.name" | while read ns name; do \
 		echo "Waiting for statefulset $$name in namespace $$ns..."; \
-		kubectl rollout status statefulset/$$name -n $$ns --timeout=300s; \
+		kubectl rollout status statefulset/$$name -n $$ns --timeout=300s || exit 1; \
 	done
 	@echo "All workloads are ready!"
 
