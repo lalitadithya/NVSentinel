@@ -295,7 +295,7 @@ func (w *ChangeStreamWatcher) Start(ctx context.Context) {
 			default:
 				w.mu.Lock()
 				hasNext := w.changeStream.Next(ctx)
-				cErr := w.changeStream.Err()
+				csErr := w.changeStream.Err()
 				w.mu.Unlock()
 
 				if hasNext {
@@ -310,8 +310,8 @@ func (w *ChangeStreamWatcher) Start(ctx context.Context) {
 						continue
 					}
 					w.eventChannel <- event
-				} else if cErr != nil {
-					klog.Fatalf("failed to watch change stream: %v", w.changeStream.Err())
+				} else if csErr != nil {
+					klog.Fatalf("failed to watch change stream: %v", csErr)
 				}
 			}
 		}
