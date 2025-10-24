@@ -309,6 +309,10 @@ func (w *ChangeStreamWatcher) Start(ctx context.Context) {
 						continue
 					}
 					w.eventChannel <- event
+				} else {
+					if w.changeStream.Err() != nil {
+						klog.Fatalf("failed to watch change stream: %v", w.changeStream.Err())
+					}
 				}
 			}
 		}
