@@ -12,34 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Default values for labeler.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+alertmanager:
+  enabled: false
 
-replicaCount: 1
+grafana:
+  enabled: false
 
-logLevel: info
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      workload-type: system
 
-image:
-  repository: ghcr.io/nvidia/nvsentinel-labeler-module
-  pullPolicy: IfNotPresent
-  tag: ""
+kube-state-metrics:
+  nodeSelector:
+    workload-type: system
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+prometheus-node-exporter:
+  nodeSelector:
+    workload-type: system
 
-serviceAccount: 
-  create: true
-
-podSecurityContext: {}
-
-securityContext: {}
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 256Mi
+prometheusOperator:
+  nodeSelector:
+    workload-type: system

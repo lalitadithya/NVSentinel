@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,34 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Default values for labeler.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 
-replicaCount: 1
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
+}
 
-logLevel: info
+error() {
+    log "ERROR: $*" >&2
+    exit 1
+}
 
-image:
-  repository: ghcr.io/nvidia/nvsentinel-labeler-module
-  pullPolicy: IfNotPresent
-  tag: ""
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
-serviceAccount: 
-  create: true
-
-podSecurityContext: {}
-
-securityContext: {}
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 256Mi

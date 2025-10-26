@@ -12,34 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Default values for labeler.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+dcgm:
+  enabled: true
 
-replicaCount: 1
+dcgmExporter:
+  enabled: true
+  serviceMonitor:
+    enabled: true
 
-logLevel: info
+operator:
+  nodeSelector:
+    workload-type: system
 
-image:
-  repository: ghcr.io/nvidia/nvsentinel-labeler-module
-  pullPolicy: IfNotPresent
-  tag: ""
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
-serviceAccount: 
-  create: true
-
-podSecurityContext: {}
-
-securityContext: {}
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 256Mi
+node-feature-discovery:
+  master:
+    nodeSelector:
+      workload-type: gpu
