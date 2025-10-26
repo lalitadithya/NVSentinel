@@ -38,8 +38,8 @@ spec:
       serviceAccountName: {{ include "janitor.serviceAccountName" . }}
       containers:
         - name: janitor
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.global.janitor.image.repository | default "ghcr.io/nvidia/nvsentinel-janitor" }}:{{ ((.Values.global).image).tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ ((.Values.global).janitor).image.pullPolicy | default "IfNotPresent" }}
           env:
             # Cloud Service Provider configuration
             - name: CSP
@@ -100,7 +100,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
             - name: metrics
-              containerPort: 2112
+              containerPort: {{ ((.Values.global).metricsPort) | default 2112 }}
       restartPolicy: Always
       {{- with (((.Values.global).systemNodeSelector) | default .Values.nodeSelector) }}
       nodeSelector:
