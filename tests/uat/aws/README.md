@@ -100,8 +100,8 @@ aws ec2 cancel-capacity-reservation \
 | Resource | Cost |
 |----------|------|
 | 2x p5.48xlarge (GPU nodes) | ~$196/hour |
-| 3x m7a.4xlarge (CPU nodes) | ~$2.30/hour |
-| **Total** | **~$198/hour** (~$4,752/day) |
+| 3x m7a.4xlarge (CPU nodes) | ~$2.31/hour |
+| **Total** | **~$198.31/hour** (~$4,759/day) |
 
 ⚠️ **Always delete the cluster and cancel capacity reservations when not in use!**
 

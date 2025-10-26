@@ -38,6 +38,7 @@ wait_for_boot_id_change() {
         
         if [[ -n "$current_boot_id" && "$current_boot_id" != "$original_boot_id" ]]; then
             log "Node $node rebooted successfully (boot ID changed)"
+            elapsed=0
             break
         fi
         
@@ -50,7 +51,6 @@ wait_for_boot_id_change() {
     fi
     
     log "Waiting for node $node to be uncordoned..."
-    elapsed=0
     while [[ $elapsed -lt $timeout ]]; do
         local is_cordoned
         is_cordoned=$(kubectl get node "$node" -o jsonpath='{.spec.unschedulable}')
@@ -107,11 +107,7 @@ test_xid_monitoring_syslog() {
     log "========================================="
     
     local gpu_node
-    gpu_node=$(kubectl get nodes -l workload-type=gpu -o jsonpath='{.items[1].metadata.name}')
-    
-    if [[ -z "$gpu_node" ]]; then
-        gpu_node=$(kubectl get nodes -l workload-type=gpu -o jsonpath='{.items[0].metadata.name}')
-    fi
+    gpu_node=$(kubectl get nodes -l workload-type=gpu -o jsonpath='{.items[0].metadata.name}')
     
     if [[ -z "$gpu_node" ]]; then
         error "No GPU nodes found"

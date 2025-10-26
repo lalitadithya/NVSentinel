@@ -44,12 +44,14 @@ cleanup() {
         log "Cleaning up cluster..."
         log "========================================="
         
+        local original_dir="$PWD"
+        
         export CLUSTER_NAME
         export AWS_REGION
         
         cd "${SCRIPT_DIR}/${CSP}"
         ./delete-eks-cluster.sh || log "WARNING: Cluster deletion failed"
-        cd "${SCRIPT_DIR}"
+        cd "$original_dir"
         
         log "Cluster cleanup completed"
     fi
@@ -153,7 +155,6 @@ install_apps() {
     export GPU_OPERATOR_VERSION
     export CERT_MANAGER_VERSION
     export NVSENTINEL_VERSION
-    export NVSENTINEL_TAG
     
     ./install-apps.sh
     
