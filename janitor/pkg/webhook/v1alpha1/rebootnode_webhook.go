@@ -68,14 +68,15 @@ func (v *RebootNodeValidator) ValidateCreate(ctx context.Context, obj runtime.Ob
 
 	logger.Info("Validating RebootNode creation", "name", rebootNode.Name, "nodeName", rebootNode.Spec.NodeName)
 
-	// Validate that the node exists
-	if err := v.validateNodeExists(ctx, rebootNode.Spec.NodeName); err != nil {
+	// Validate that the node exists and get the node object
+	node, err := v.validateNodeExists(ctx, rebootNode.Spec.NodeName)
+	if err != nil {
 		logger.Info("Node validation failed", "nodeName", rebootNode.Spec.NodeName, "error", err.Error())
 		return nil, err
 	}
 
 	// Check if the node is in the exclusions list
-	if err := v.validateNodeNotInExclusions(ctx, rebootNode.Spec.NodeName); err != nil {
+	if err := v.validateNodeNotInExclusions(node, rebootNode.Spec.NodeName); err != nil {
 		logger.Info("Node exclusion validation failed", "nodeName", rebootNode.Spec.NodeName, "error", err.Error())
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func (v *RebootNodeValidator) ValidateUpdate(
 	}
 
 	// Validate that the node still exists
-	if err := v.validateNodeExists(ctx, newRebootNode.Spec.NodeName); err != nil {
+	if _, err := v.validateNodeExists(ctx, newRebootNode.Spec.NodeName); err != nil {
 		logger.Info("Node validation failed", "nodeName", newRebootNode.Spec.NodeName, "error", err.Error())
 		return nil, err
 	}
@@ -143,33 +144,25 @@ func (v *RebootNodeValidator) ValidateDelete(ctx context.Context, obj runtime.Ob
 }
 
 // validateNodeExists checks if the specified node exists in the cluster.
-func (v *RebootNodeValidator) validateNodeExists(ctx context.Context, nodeName string) error {
+// Returns the node object if found.
+func (v *RebootNodeValidator) validateNodeExists(ctx context.Context, nodeName string) (*corev1.Node, error) {
 	if v.Client == nil {
-		return fmt.Errorf("kubernetes client not available for node validation")
+		return nil, fmt.Errorf("kubernetes client not available for node validation")
 	}
 
 	var node corev1.Node
 	if err := v.Client.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
-		return fmt.Errorf("node '%s' does not exist in the cluster: %w", nodeName, err)
+		return nil, fmt.Errorf("node '%s' does not exist in the cluster: %w", nodeName, err)
 	}
 
-	return nil
+	return &node, nil
 }
 
 // validateNodeNotInExclusions checks if the node matches any exclusion label selectors.
-func (v *RebootNodeValidator) validateNodeNotInExclusions(ctx context.Context, nodeName string) error {
-	if v.Client == nil {
-		return fmt.Errorf("kubernetes client not available for node validation")
-	}
-
+func (v *RebootNodeValidator) validateNodeNotInExclusions(node *corev1.Node, nodeName string) error {
 	if v.Config == nil || len(v.Config.NodeExclusions) == 0 {
 		// No exclusions configured, allow all nodes
 		return nil
-	}
-
-	var node corev1.Node
-	if err := v.Client.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
-		return fmt.Errorf("node '%s' does not exist in the cluster: %w", nodeName, err)
 	}
 
 	for _, exclusion := range v.Config.NodeExclusions {

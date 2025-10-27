@@ -153,8 +153,6 @@ func run() error {
 			"webhook-cert-name", webhookCertName,
 			"webhook-cert-key", webhookCertKey)
 
-		var err error
-
 		webhookCertWatcher, err = certwatcher.New(
 			filepath.Join(webhookCertPath, webhookCertName),
 			filepath.Join(webhookCertPath, webhookCertKey),

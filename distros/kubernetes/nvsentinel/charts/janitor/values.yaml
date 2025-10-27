@@ -86,8 +86,9 @@ tolerations: []
 affinity: {}
 
 config:
-  # Global timeout for operations (default: 30m)
-  timeout: "30m"
+  # Global timeout - used as default for controllers that don't specify their own timeout
+  # Should be set to a reasonable default that works for most operations
+  timeout: "25m"
   # Manual mode - if true, controllers won't send actual reboot/terminate signals
   manualMode: false
   # Node exclusions - nodes matching these label selectors will be excluded from janitor operations
@@ -107,7 +108,7 @@ config:
     # Reboot node controller configuration
     rebootNode:
       # Timeout for reboot operations (includes CSP API call + node recovery time)
-      # If not set, defaults to config.timeout
+      # If not set or set to empty, defaults to config.timeout (25m)
       # AWS/Azure/OCI: Typically 25m (includes 5min cooldown period)
       # GCP: Can be shorter as operation status is tracked directly
       # kind/kwok: Can be much shorter for testing (5m)

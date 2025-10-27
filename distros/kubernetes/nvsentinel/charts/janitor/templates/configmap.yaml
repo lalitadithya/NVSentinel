@@ -47,5 +47,5 @@ data:
       {{- end }}
     
     rebootNodeController:
-      timeout: {{ .Values.config.controllers.rebootNode.timeout | default "25m" }}
+      timeout: {{ .Values.config.controllers.rebootNode.timeout | default .Values.config.timeout }}
 

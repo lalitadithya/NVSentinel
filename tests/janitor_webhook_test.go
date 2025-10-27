@@ -99,7 +99,8 @@ func TestJanitorWebhookRejectsDuplicateReboots(t *testing.T) {
 		client, err := c.NewClient()
 		require.NoError(t, err, "failed to create kubernetes client")
 
-		helpers.WaitForRebootNodeCR(ctx, t, client, selectedNodeName)
+		completedRebootNode := helpers.WaitForRebootNodeCR(ctx, t, client, selectedNodeName)
+		require.NotNil(t, completedRebootNode, "first RebootNode should complete")
 
 		crName := fmt.Sprintf("reboot-%s-third", selectedNodeName)
 		_, err = helpers.CreateRebootNodeCR(
@@ -110,7 +111,7 @@ func TestJanitorWebhookRejectsDuplicateReboots(t *testing.T) {
 		)
 		require.NoError(t, err, "third RebootNode CR creation should succeed after first completed")
 
-		completedRebootNode := helpers.WaitForRebootNodeCR(ctx, t, client, selectedNodeName)
+		completedRebootNode = helpers.WaitForRebootNodeCR(ctx, t, client, selectedNodeName)
 		assert.NotNil(t, completedRebootNode, "third RebootNode should complete")
 
 		return ctx
