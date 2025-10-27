@@ -76,7 +76,7 @@ func (v *RebootNodeValidator) ValidateCreate(ctx context.Context, obj runtime.Ob
 	}
 
 	// Check if the node is in the exclusions list
-	if err := v.validateNodeNotInExclusions(node, rebootNode.Spec.NodeName); err != nil {
+	if err := v.validateNodeNotInExclusions(node); err != nil {
 		logger.Info("Node exclusion validation failed", "nodeName", rebootNode.Spec.NodeName, "error", err.Error())
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (v *RebootNodeValidator) validateNodeExists(ctx context.Context, nodeName s
 }
 
 // validateNodeNotInExclusions checks if the node matches any exclusion label selectors.
-func (v *RebootNodeValidator) validateNodeNotInExclusions(node *corev1.Node, nodeName string) error {
+func (v *RebootNodeValidator) validateNodeNotInExclusions(node *corev1.Node) error {
 	if v.Config == nil || len(v.Config.NodeExclusions) == 0 {
 		// No exclusions configured, allow all nodes
 		return nil
@@ -174,7 +174,7 @@ func (v *RebootNodeValidator) validateNodeNotInExclusions(node *corev1.Node, nod
 		if selector.Matches(labels.Set(node.Labels)) {
 			return fmt.Errorf(
 				"node '%s' is excluded from janitor operations due to label matching exclusion selector '%s'",
-				nodeName,
+				node.Name,
 				selector.String(),
 			)
 		}
