@@ -44,7 +44,7 @@ jobs:
     uses: ./.github/workflows/prepare-environment.yml
 
   build-image-list:
-    runs-on: ubuntu-latest
+    runs-on: linux-amd64-cpu32
     timeout-minutes: 60
     needs: prepare-environment
     outputs:
@@ -167,7 +167,7 @@ jobs:
   # Build images using ko and attest provenance
   # Once validated, this will replace the container-publish job above
   build-images:
-    runs-on: ubuntu-latest
+    runs-on: linux-amd64-cpu32
     timeout-minutes: 60
     needs: prepare-environment
     permissions:
@@ -200,7 +200,6 @@ jobs:
           shellcheck-version: ${{ needs.prepare-environment.outputs.shellcheck_version }}
           ko-version: ${{ needs.prepare-environment.outputs.ko_version }}
 
-      # ko is already installed in the setup-ci-tools action
       - name: Authenticate to GHCR
         shell: bash
         run: echo ${{ secrets.GITHUB_TOKEN }} | ko login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -211,7 +210,7 @@ jobs:
 
   attest:
     needs: build-images
-    runs-on: ubuntu-latest
+    runs-on: linux-amd64-cpu32
     permissions:
       packages: write
       id-token: write
