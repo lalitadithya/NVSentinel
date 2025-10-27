@@ -35,7 +35,7 @@ case "$ARCH" in
   x86_64)
     PLATFORM="linux/amd64"
     ;;
-  aarch64)
+  aarch64|arm64)
     PLATFORM="linux/arm64"
     ;;
   *)
