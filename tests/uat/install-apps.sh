@@ -154,11 +154,7 @@ wait_for_gpu_operator() {
 install_fake_gpu_stack() {
     log "Installing fake GPU driver and DCGM for Kind..."
     
-    if ! kubectl get namespace gpu-operator &>/dev/null; then
-        if ! kubectl create namespace gpu-operator; then
-            error "Failed to create gpu-operator namespace"
-        fi
-    fi
+    kubectl create namespace gpu-operator --dry-run=client -o yaml | kubectl apply -f -
     
     if ! kubectl apply -f "${VALUES_DIR}/nvidia-driver-daemonset.yaml"; then
         error "Failed to install fake GPU driver"

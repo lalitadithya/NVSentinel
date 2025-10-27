@@ -213,8 +213,9 @@ jobs:
     runs-on: linux-amd64-cpu32
     timeout-minutes: 60
     needs:
-      - prepare-environment
       - container-publish
+      - build-images
+      - attest
     env:
       CLUSTER_NAME: 'nvsentinel-uat'
       FAKE_GPU_NODE_COUNT: '10'
@@ -232,7 +233,7 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
-          docker system prune -f
+          sudo docker system prune -f
 
       - name: Setup build environment
         uses: ./.github/actions/setup-ci-env
@@ -285,8 +286,8 @@ jobs:
           mkdir -p /tmp/debug-artifacts
           kubectl get all --all-namespaces > /tmp/debug-artifacts/all-resources.yaml || true
           kubectl get events --all-namespaces --sort-by='.lastTimestamp' > /tmp/debug-artifacts/all-events.yaml || true
-          kubectl get pods -n ${{ env.NVSENTINEL_NAMESPACE }} -o yaml > /tmp/debug-artifacts/nvsentinel-pods.yaml || true
-          kubectl logs -n ${{ env.NVSENTINEL_NAMESPACE }} --all-containers=true --tail=500 > /tmp/debug-artifacts/nvsentinel-logs.txt || true
+          kubectl get pods -n nvsentinel -o yaml > /tmp/debug-artifacts/nvsentinel-pods.yaml || true
+          kubectl logs -n nvsentinel --all-containers=true --tail=500 > /tmp/debug-artifacts/nvsentinel-logs.txt || true
           docker images > /tmp/debug-artifacts/docker-images.txt
           df -h > /tmp/debug-artifacts/disk-usage.txt
 
