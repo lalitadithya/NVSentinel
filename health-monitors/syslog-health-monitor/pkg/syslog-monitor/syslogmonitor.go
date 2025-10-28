@@ -282,10 +282,12 @@ func (sm *SyslogMonitor) handleBootIDChange(oldBootID, newBootID string) error {
 			errRes := types.ErrorResolution{
 				RecommendedAction: pb.RecommendedAction_NONE,
 			}
+
 			healthEvents := sm.prepareHealthEventWithAction(check, message, true, errRes)
 			if err := sm.sendHealthEventWithRetry(healthEvents, 5, 2*time.Second); err != nil {
 				return fmt.Errorf("failed to send health event: %w", err)
 			}
+
 			slog.Info("Published healthy event after system reboot", "check", check.Name)
 		}
 	}
