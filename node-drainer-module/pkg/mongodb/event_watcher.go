@@ -55,7 +55,6 @@ func NewEventWatcher(
 func (w *EventWatcher) Start(ctx context.Context) error {
 	slog.Info("Starting MongoDB event watcher")
 
-	// Cold start failure shouldn't prevent normal operation
 	if err := w.handleColdStart(ctx); err != nil {
 		slog.Error("Failed to handle cold start", "error", err)
 		return fmt.Errorf("failed to cold start: %w", err)
