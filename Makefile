@@ -674,7 +674,7 @@ tilt-ci: ## Run Tilt in CI mode (no UI, waits for all resources)
 	@echo "Starting Tilt with SKIP_KWOK_NODES_IN_TILT=1 (with retry logic)..."
 	@for i in 1 2 3; do \
 		echo "Attempt $$i of 3..."; \
-		if SKIP_KWOK_NODES_IN_TILT=1 tilt ci -f tilt/Tiltfile --timeout=10m; then \
+		if SKIP_KWOK_NODES_IN_TILT=1 tilt ci -f tilt/Tiltfile --timeout=10m --debug; then \
 			echo "Tilt CI succeeded on attempt $$i"; \
 			break; \
 		else \
