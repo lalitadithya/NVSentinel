@@ -189,6 +189,7 @@ func TestSidecarParser_Parse(t *testing.T) {
 			assert.Equal(t, tc.expectedMnemonic, result.Result.Mnemonic, "Mnemonic should match")
 			assert.Equal(t, tc.expectedErrorCode, result.Result.DecodedXIDStr, "Decoded XID string should match")
 			assert.Equal(t, tc.expectedErrorCode, result.Result.Name, "Name should match")
+			assert.Equal(t, tc.expectedResolution, result.Result.Resolution, "Resolution should match")
 
 			assert.Empty(t, result.Error, "Error field should be empty for successful parse")
 		})
