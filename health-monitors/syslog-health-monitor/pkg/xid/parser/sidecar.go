@@ -103,7 +103,7 @@ func (p *SidecarParser) Parse(message string) (*Response, error) {
 		return nil, fmt.Errorf("error decoding xid response: %w", err)
 	}
 
-	// if the side car returns the recommedation as is from the XID error message, then
+	// if the side car returns the recommendation as is from the XID error message, then
 	// map it to well known resolutions string from the proto
 	switch xidResp.Result.Resolution {
 	case "GPU Reset Required", "Drain and Reset":
