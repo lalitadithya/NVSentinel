@@ -14,7 +14,7 @@ When NVSentinel detects issues with GPU nodes, it may cordon them (mark them as 
 
 The system could potentially cordon too many nodes too quickly, which would reduce cluster capacity and impact your applications.
 
-The circuit breaker acts as a safeguard by automatically stopping all remediation actions when a threshold is reached. Once tripped, it requires manual human intervention to reset, ensuring that someone investigates the root cause before normal operations resume.
+The circuit breaker acts as a safeguard by automatically preventing new remediation actions when a threshold is reached. Once tripped, it requires manual human intervention to reset, ensuring that someone investigates the root cause before normal operations resume.
 
 ## How It Works
 
@@ -26,7 +26,7 @@ The circuit breaker monitors how many nodes are cordoned over a sliding time win
 - Your cluster is protected from hardware issues
 
 **When the circuit breaker trips (TRIPPED state):**
-- All node remediation actions stop immediately
+- No new node remediation actions will be performed. Any existing remediation operations will continue and will finish to completion
 - NVSentinel continues monitoring and detecting issues
 - Node events and conditions are still updated for visibility
 - No additional nodes will be cordoned until you manually reset the breaker
@@ -79,7 +79,7 @@ metadata:
 
 **Status meanings:**
 - `CLOSED`: Normal operation - the circuit breaker is monitoring but not blocking actions
-- `TRIPPED`: Protection mode - all node remediation has been stopped
+- `TRIPPED`: Protection mode - new node remediation actions are blocked (any in-progress operations will complete)
 
 ### Monitor via Prometheus Metrics
 
@@ -146,7 +146,7 @@ Based on your findings:
 
 ## Resetting the Circuit Breaker
 
-**The circuit breaker will NOT automatically reset.** Once tripped, NVSentinel will remain in a protective state until you manually intervene. This ensures that any systematic issues are investigated and resolved before resuming automated remediation.
+**The circuit breaker will NOT automatically reset.** Once tripped, NVSentinel will block all new remediation actions and remain in this protective state until you manually intervene. This ensures that any systematic issues are investigated and resolved before resuming automated remediation.
 
 Once you've investigated and addressed the root cause, reset the circuit breaker:
 
