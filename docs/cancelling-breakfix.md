@@ -42,7 +42,7 @@ See if a node was manually uncordoned:
 kubectl get node <node-name> -o jsonpath='{.metadata.annotations.k8saas\.nvidia\.com/quarantinedNodeUncordonedManually}'
 ```
 
-If this returns `"true"`, the node was manually uncordoned.
+If this returns `"True"`, the node was manually uncordoned.
 
 ## Permanent Opt-Out: Disabling Break-Fix on Nodes
 
