@@ -104,21 +104,25 @@ kubectl label node --all k8saas.nvidia.com/ManagedByNVSentinel-
 ### Scenario 1: False Positive
 A GPU XID error was detected but you determine it's transient and not a real issue.
 
-**Action**: Uncordon the node
+#### Action
+Uncordon the node
 ```bash
 kubectl uncordon gpu-node-42
 ```
 
-**Result**: Workflow cancelled, node returns to service. If the error reoccurs, NVSentinel will evaluate it again.
+#### Result
+Workflow cancelled, node returns to service. If the error reoccurs, NVSentinel will evaluate it again.
 
 ### Scenario 2: Driver Upgrade
 You're upgrading GPU drivers across the cluster and don't want NVSentinel to interfere.
 
-**Action**: Label nodes before upgrade
+#### Action
+Label nodes before upgrade
 ```bash
 kubectl label node --all k8saas.nvidia.com/ManagedByNVSentinel=false
 # Perform driver upgrade
 kubectl label node --all k8saas.nvidia.com/ManagedByNVSentinel-
 ```
 
-**Result**: NVSentinel ignores all health events during the maintenance window.
+#### Result
+NVSentinel ignores all health events during the maintenance window.

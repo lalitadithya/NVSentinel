@@ -130,11 +130,5 @@ When all health checks return to healthy state:
 - Quarantine annotations are cleaned up
 - Node returns to normal scheduling
 
-### Manual Override Support
-Operators maintain full control:
-- Manual cordons are not interfered with
-- Manual uncordons can be annotated to prevent re-quarantine
-- `manual-uncordon` annotation prevents automatic re-cordoning
-
 ### Circuit Breaker Integration
 Built-in protection against mass cordoning. See [Circuit Breaker documentation](circuit-breaker.md) for details.

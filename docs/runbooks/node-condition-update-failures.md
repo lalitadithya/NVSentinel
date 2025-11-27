@@ -65,11 +65,13 @@ If node was deleted or renamed, updates will fail.
 
 ### 5. Common Issues
 
-**API Server Throttling (429 errors)**
+#### API Server Throttling (429 errors)
+
 - Too many health events causing frequent node updates
 - Check health monitor event rates in their logs
 
-**RBAC Denied (403 errors)**
+#### RBAC Denied (403 errors)
+
 - Fix RBAC and restart:
 ```bash
 kubectl rollout restart deployment/platform-connector -n nvsentinel

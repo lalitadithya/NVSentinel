@@ -56,17 +56,20 @@ Should include `create`, `update`, `list` verbs for `events` resource.
 
 ### 4. Common Issues
 
-**API Server Throttling (429 errors)**
+#### API Server Throttling (429 errors)
+
 - Health monitors may be generating too many events
 - Check health monitor polling intervals in their configs
 
-**RBAC Denied (403 errors)**
+#### RBAC Denied (403 errors)
+
 - Fix RBAC permissions and restart platform-connector:
 ```bash
 kubectl rollout restart deployment/platform-connector -n nvsentinel
 ```
 
-**API Server Unreachable**
+#### API Server Unreachable
+
 - Check cluster status: `kubectl cluster-info`
 - Check for network policies blocking platform-connector
 

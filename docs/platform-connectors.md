@@ -81,7 +81,7 @@ Stores health events in the datastore:
 
 ### Kubernetes Integration
 Updates cluster state based on health events:
-- **Node Conditions**: Updates node conditions for fatal failures (e.g., `GPUHealthy: False`)
+- **Node Conditions**: Updates node conditions for fatal failures
 - **Node Events**: Creates Kubernetes events for non-fatal issues
 - Event correlation and deduplication
 

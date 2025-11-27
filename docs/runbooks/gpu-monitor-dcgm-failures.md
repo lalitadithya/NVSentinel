@@ -52,7 +52,7 @@ DCGM pod must be `Running` on the same node as the failing GPU monitor.
 
 ### 4. Test Connectivity
 
-**For Kubernetes Service Mode:**
+#### For Kubernetes Service Mode
 
 ```bash
 # Check if DCGM service exists
@@ -62,7 +62,7 @@ kubectl get svc -n gpu-operator | grep dcgm
 kubectl exec -n nvsentinel <GPU_MONITOR_POD> -- nslookup nvidia-dcgm.gpu-operator.svc
 ```
 
-**For Localhost Mode:**
+#### For Localhost Mode
 
 ```bash
 # Verify GPU monitor uses hostNetwork
@@ -72,19 +72,23 @@ kubectl get daemonset gpu-health-monitor -n nvsentinel -o yaml | grep hostNetwor
 
 ### 5. Common Issues
 
-**DCGM Pod Not Running**
+#### DCGM Pod Not Running
+
 - Check GPU Operator status: `kubectl get pods -n gpu-operator`
 - Restart DCGM: `kubectl delete pod -n gpu-operator <DCGM_POD>`
 
-**Wrong Service Endpoint**
+#### Wrong Service Endpoint
+
 - Update gpu-health-monitor config with correct DCGM service name
 - Restart gpu-health-monitor
 
-**Network Policy Blocking Connection**
+#### Network Policy Blocking Connection
+
 - Check network policies: `kubectl get networkpolicies -n gpu-operator`
 - Ensure traffic allowed from nvsentinel namespace to gpu-operator
 
-**Configuration Mismatch**
+#### Configuration Mismatch
+
 - Using service mode but monitor has `hostNetwork: true` (or vice versa)
 - Align configuration and restart gpu-health-monitor
 
