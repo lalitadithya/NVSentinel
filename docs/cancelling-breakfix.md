@@ -39,7 +39,7 @@ The node can schedule new workloads right away. If the health issue happens agai
 See if a node was manually uncordoned:
 
 ```bash
-kubectl get node <node-name> -o jsonpath='{.metadata.annotations.k8saas\.nvidia\.com/quarantined-node-uncordoned-manually}'
+kubectl get node <node-name> -o jsonpath='{.metadata.annotations.k8saas\.nvidia\.com/quarantinedNodeUncordonedManually}'
 ```
 
 If this returns `"true"`, the node was manually uncordoned.
