@@ -63,7 +63,7 @@ Configure the Fault Quarantine module through Helm values:
 ```yaml
 fault-quarantine:
   enabled: true           # Enable the module
-  dryRun: false          # Test mode - logs actions without executing
+  dryRun: false          # Live mode - execute actions; set to true to log actions without executing
   
   circuitBreaker:
     enabled: true        # Safety feature to prevent mass cordoning

@@ -65,7 +65,7 @@ kubectl get deployment platform-connector -n nvsentinel -o yaml | grep -A 3 "/va
 kubectl get daemonset gpu-health-monitor -n nvsentinel -o yaml | grep -A 3 "/var/run/nvsentinel"
 ```
 
-Should be mounted from hostPath.
+Both should be mounted from hostPath.
 
 ### 5. Restart Components
 
@@ -95,18 +95,18 @@ kubectl exec -n nvsentinel mongodb-0 -- mongosh --eval 'db.HealthEvents.find().s
 
 ## Common Issues
 
-#### Socket Missing
+### Socket Missing
 
 - Platform-connector not running or crashed
 - Volume mount misconfigured
 - **Fix:** Restart platform-connector, verify volume mounts
 
-#### Intermittent Failures
+### Intermittent Failures
 
 - Platform-connector restarts
 - **Fix:** Monitor will auto-retry, investigate platform-connector crashes if frequent
 
-#### All Monitors Failing
+### All Monitors Failing
 
 - Platform-connector socket corrupted
 - **Fix:** Restart platform-connector, then all health monitors
