@@ -5,22 +5,20 @@
 Node conditions reflect hardware health status (GPU, NVSwitch). Update failures prevent accurate health reporting and can impact scheduling decisions.
 
 **Key points:**
-- Conditions updated for both fatal and non-fatal events
+- Conditions updated for fatal events
 - Failures block health status visibility
-- Fatal conditions trigger remediation when working
 
 ## Symptoms
 
 - Metric `nvsentinel_node_condition_update_total{status="failed"}` is increasing
 - Node conditions don't reflect current hardware health
-- Health events in MongoDB but not on nodes
 
 ## Procedure
 
-### 1. Check Platform-Connector Logs
+### 1. Check Platform Connector Logs
 
 ```bash
-kubectl logs -n nvsentinel deployment/platform-connector --tail=50 | grep -i "failed to update node"
+kubectl logs -n nvsentinel daemonset/platform-connectors
 ```
 
 Look for error codes:
@@ -37,19 +35,19 @@ Look for error codes:
 kubectl cluster-info
 
 # Check platform-connector status
-kubectl get pods -n nvsentinel -l app=platform-connector
+kubectl get pods -n nvsentinel -l app.kubernetes.io/name=nvsentinel
 ```
 
 ### 3. Verify RBAC Permissions
 
 ```bash
-kubectl auth can-i update nodes/status --as=system:serviceaccount:nvsentinel:platform-connector
+kubectl auth can-i update nodes/status --as=system:serviceaccount:nvsentinel:platform-connectors
 ```
 
 Should return `yes`. If `no`, check the ClusterRole:
 
 ```bash
-kubectl get clusterrole platform-connector -o yaml | grep -A 5 "nodes/status"
+kubectl get clusterrole platform-connectors -o yaml
 ```
 
 Should include `update`, `patch` verbs for `nodes/status`.
@@ -63,25 +61,9 @@ kubectl get node <NODE_NAME>
 
 If node was deleted or renamed, updates will fail.
 
-### 5. Common Issues
-
-#### API Server Throttling (429 errors)
-
-- Too many health events causing frequent node updates
-- Check health monitor event rates in their logs
-
-#### RBAC Denied (403 errors)
-
-- Fix RBAC and restart:
-```bash
-kubectl rollout restart deployment/platform-connector -n nvsentinel
-```
-
-### 6. Verify Resolution
+### 5. Verify Resolution
 
 ```bash
 # Check node conditions reflect current health
-kubectl describe node <NODE_NAME> | grep -A 20 "Conditions:"
-
-# Look for Gpu*, NVSwitch* conditions
+kubectl describe node <NODE_NAME>
 ```

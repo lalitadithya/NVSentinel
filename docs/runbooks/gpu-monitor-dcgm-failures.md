@@ -12,7 +12,6 @@ GPU health monitor requires connection to NVIDIA DCGM for all GPU health checks.
 ## Symptoms
 
 - Node condition `GpuDcgmConnectivityFailure` present
-- Metric `dcgm_health_active_events{event_type="GpuDcgmConnectivityFailure"}` equals 1
 - GPU monitor logs show DCGM connection errors
 
 ## Procedure
@@ -30,13 +29,29 @@ Look for:
 
 ### 2. Identify DCGM Configuration
 
+Check which DCGM mode is in use by verifying if the GPU Operator DCGM service exists:
+
 ```bash
-kubectl get configmap gpu-health-monitor-config -n nvsentinel -o yaml | grep -i dcgm
+# Check if DCGM service exists
+kubectl get svc -n gpu-operator nvidia-dcgm
+
+# If service exists, check service details
+kubectl get svc -n gpu-operator nvidia-dcgm -o yaml
 ```
 
-Two modes:
-- **Kubernetes Service**: `dcgmK8sServiceEnabled: true`, endpoint like `nvidia-dcgm.gpu-operator.svc:5555`
-- **Localhost**: `dcgmK8sServiceEnabled: false`, uses `localhost:5555` with `hostNetwork: true`
+If the service exists, the cluster is using **Kubernetes Service Mode**. If the service doesn't exist or is not exposed, the cluster is using **Localhost Mode**.
+
+Verify the gpu-health-monitor pod configuration matches the expected mode:
+
+```bash
+kubectl get pod -n nvsentinel <GPU_MONITOR_POD> -o yaml | grep -A 2 "dcgm-addr"
+```
+
+Expected configurations:
+- **Kubernetes Service Mode**: `--dcgm-addr nvidia-dcgm.gpu-operator.svc:5555` and `--dcgm-k8s-service-enabled true`
+- **Localhost Mode**: `--dcgm-addr localhost:5555` and `--dcgm-k8s-service-enabled false` (requires `hostNetwork: true`)
+
+These values come from Helm values `dcgm.dcgmK8sServiceEnabled` and `dcgm.service.endpoint`/`dcgm.service.port`.
 
 ### 3. Verify DCGM Pod Running
 
@@ -50,62 +65,28 @@ kubectl logs -n gpu-operator <DCGM_POD> --tail=30
 
 DCGM pod must be `Running` on the same node as the failing GPU monitor.
 
-### 4. Test Connectivity
+### 4. Test DCGM Connectivity
 
-#### For Kubernetes Service Mode
-
-```bash
-# Check if DCGM service exists
-kubectl get svc -n gpu-operator | grep dcgm
-
-# Test DNS from GPU monitor pod
-kubectl exec -n nvsentinel <GPU_MONITOR_POD> -- nslookup nvidia-dcgm.gpu-operator.svc
-```
-
-#### For Localhost Mode
+Test DCGM connectivity from within the gpu-health-monitor pod:
 
 ```bash
-# Verify GPU monitor uses hostNetwork
-kubectl get daemonset gpu-health-monitor -n nvsentinel -o yaml | grep hostNetwork
-# Should be: hostNetwork: true
+# Exec into the GPU monitor pod
+kubectl exec -it -n nvsentinel <GPU_MONITOR_POD> -- /bin/bash
+
+# For Kubernetes Service Mode, use the service endpoint
+dcgmi discovery -l --host nvidia-dcgm.gpu-operator.svc:5555
+
+# For Localhost Mode, use localhost
+dcgmi discovery -l --host localhost:5555
 ```
 
-### 5. Common Issues
+If DCGM commands fail, check:
+- DCGM service exists: `kubectl get svc -n gpu-operator | grep dcgm`
+- DCGM pod is running on the same node
+- Network policies allow traffic from nvsentinel to gpu-operator namespace
+- For localhost mode: Verify `hostNetwork: true` in gpu-health-monitor DaemonSet
 
-#### DCGM Pod Not Running
-
-- Check GPU Operator status: `kubectl get pods -n gpu-operator`
-- Restart DCGM: `kubectl delete pod -n gpu-operator <DCGM_POD>`
-
-#### Wrong Service Endpoint
-
-- Update gpu-health-monitor config with correct DCGM service name
-- Restart gpu-health-monitor
-
-#### Network Policy Blocking Connection
-
-- Check network policies: `kubectl get networkpolicies -n gpu-operator`
-- Ensure traffic allowed from nvsentinel namespace to gpu-operator
-
-#### Configuration Mismatch
-
-- Using service mode but monitor has `hostNetwork: true` (or vice versa)
-- Align configuration and restart gpu-health-monitor
-
-### 6. Restart Sequence
-
-```bash
-# Step 1: Restart DCGM
-kubectl delete pod -n gpu-operator <DCGM_POD>
-
-# Step 2: Wait for DCGM ready
-kubectl wait --for=condition=ready pod -n gpu-operator -l app=nvidia-dcgm --timeout=120s
-
-# Step 3: Restart GPU monitor on affected node
-kubectl delete pod -n nvsentinel <GPU_MONITOR_POD>
-```
-
-### 7. Verify Resolution
+### 5. Verify Resolution
 
 ```bash
 # Check condition cleared
@@ -114,7 +95,4 @@ kubectl describe node <NODE_NAME> | grep GpuDcgmConnectivityFailure
 
 # Watch GPU monitor logs for health checks
 kubectl logs -n nvsentinel <GPU_MONITOR_POD> -f | grep "Publish DCGM"
-
-# Verify GPU health events in MongoDB
-kubectl exec -n nvsentinel mongodb-0 -- mongosh --eval 'db.HealthEvents.find({"healthevent.agent": "gpu-health-monitor"}).sort({_id: -1}).limit(3)'
 ```

@@ -22,6 +22,7 @@ The Kubernetes Object Monitor fills these gaps by letting you define custom heal
 The monitor operates using policies that you define:
 
 1. **Watch resources**: Uses Kubernetes controllers to watch specified resource types (Nodes, Pods, Jobs, CRDs, etc.)
+2. **Evaluate health state**: Evaluates CEL expressions against resource state
 3. **Detect unhealthy state**: When a CEL expression evaluates to **true**, the resource is considered unhealthy and an unhealthy event is generated
 4. **Detect recovery**: When a CEL expression evaluates to **false**, the resource is considered healthy and a healthy event is automatically sent
 5. **Map to nodes**: Associates the health event with a specific node using CEL expressions

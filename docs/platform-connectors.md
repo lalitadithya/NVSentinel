@@ -41,9 +41,6 @@ Configure Platform Connectors through Helm values:
 platform-connectors:
   enabled: true
   
-  # gRPC server configuration
-  grpcPort: 50051
-  
   # Node metadata enrichment
   nodeMetadata:
     enabled: true
@@ -53,13 +50,15 @@ platform-connectors:
       - "topology.kubernetes.io/zone"
       - "topology.kubernetes.io/region"
       - "node.kubernetes.io/instance-type"
+      - "nvidia.com/cuda.driver-version.major"
+      - "nvidia.com/cuda.driver-version.minor"
+      - "nvidia.com/cuda.driver-version.revision"
       - "nvidia.com/cuda.driver-version.full"
       # Add cloud-specific labels as needed
 ```
 
 ### Configuration Options
 
-- **gRPC Port**: Configure port for health monitor connections
 - **Node Metadata**: Enable/disable metadata enrichment and configure which labels to include
 - **Cache Settings**: Configure metadata cache size and TTL for performance
 - **Kubernetes API Rate Limits**: Configure QPS and burst for Kubernetes API calls
