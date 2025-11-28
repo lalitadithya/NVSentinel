@@ -104,7 +104,9 @@ The default configuration includes common topology and infrastructure labels:
 - `topology.kubernetes.io/zone`
 - `topology.kubernetes.io/region`
 - `node.kubernetes.io/instance-type`
-- etc
+- ...
+
+> The default list is defined in `distros/kubernetes/nvsentinel/values.yaml`
 
 ### Example
 
