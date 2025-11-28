@@ -128,7 +128,7 @@ gpu-health-monitor:
 
 Set to `true` when DCGM is deployed with host networking (`dcgm.dcgmK8sServiceEnabled: false`). In this mode, GPU Health Monitor connects to DCGM via `localhost:5555` on the host network.
 
-#### Example 1: Host Networking Mode for connecting to DCGM
+### Example 1: Host Networking Mode for connecting to DCGM
 
 ```yaml
 dcgm:

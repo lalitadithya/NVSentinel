@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Syslog Health Monitor module watches system logs for GPU errors (XID/SXID) and GPU fallen off events by reading journald logs. This document covers all Helm configuration options for system administrators.
+The Syslog Health Monitor module watches system logs for GPU errors (XID/SXID) and GPU-fallen-off events by reading journald logs. This document covers all Helm configuration options for system administrators.
 
 ## Prerequisites
 
@@ -136,7 +136,7 @@ When the sidecar is enabled, the syslog health monitor communicates with it via 
 
 ### Endpoint
 
-```
+```http
 POST http://localhost:8080/decode-xid
 ```
 

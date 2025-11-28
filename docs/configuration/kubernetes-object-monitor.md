@@ -184,7 +184,7 @@ nodeAssociation:
 The `lookup()` function retrieves other Kubernetes resources during evaluation.
 
 ##### Signature:
-```
+```text
 lookup(version, kind, namespace, name) -> resource object
 ```
 
