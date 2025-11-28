@@ -17,7 +17,8 @@ global:
 ```
 
 > Note: Several modules (fault-quarantine, node-drainer, fault-remediation, event-exporter) depend on the datastore. Enable the datastore when using these modules.
-> 
+
+
 > Note: cert-manager must be installed in the cluster before deploying mongodb-store.
 
 ### Initialization Job Placement
