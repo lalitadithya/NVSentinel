@@ -121,20 +121,21 @@ fault-quarantine:
       match:
         all:
           - kind: "HealthEvent"
-            expression: "CEL expression for health event"
+            expression: "event.agent == 'gpu-health-monitor' && event.componentClass == 'GPU' && event.isFatal == true"
           - kind: "Node"
-            expression: "CEL expression for node"
+            expression: |
+              !('k8saas.nvidia.com/ManagedByNVSentinel' in node.metadata.labels && node.metadata.labels['k8saas.nvidia.com/ManagedByNVSentinel'] == "false")
         
         any:
           - kind: "HealthEvent"
-            expression: "CEL expression"
+            expression: "event.agent == 'syslog-health-monitor' && event.componentClass == 'GPU' && event.isFatal == true"
       
       cordon:
         shouldCordon: true
       
       taint:
-        key: "taint-key"
-        value: "taint-value"
+        key: "nvidia.com/gpu-error"
+        value: "fatal"
         effect: "NoSchedule"
 ```
 
