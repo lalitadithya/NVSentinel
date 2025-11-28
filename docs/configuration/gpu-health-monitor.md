@@ -95,9 +95,9 @@ Kubernetes service DNS name for DCGM. Typically the DCGM service deployed by GPU
 ##### service.port
 Port where DCGM is listening. Default is `5555`.
 
-### DCGM Service Examples
+#### DCGM Service Examples
 
-#### Example 1: GPU Operator DCGM Service
+##### Example 1: GPU Operator DCGM Service
 
 ```yaml
 dcgm:
@@ -107,7 +107,7 @@ dcgm:
     port: 5555
 ```
 
-#### Example 2: Custom Namespace DCGM Service
+##### Example 2: Custom Namespace DCGM Service
 
 ```yaml
 dcgm:
@@ -117,7 +117,7 @@ dcgm:
     port: 5555
 ```
 
-## Host Networking
+### Host Networking
 
 Enables host network mode for GPU Health Monitor pods.
 
@@ -128,7 +128,7 @@ gpu-health-monitor:
 
 Set to `true` when DCGM is deployed with host networking (`dcgm.dcgmK8sServiceEnabled: false`). In this mode, GPU Health Monitor connects to DCGM via `localhost:5555` on the host network.
 
-### Example: Host Networking Mode for connecting to DCGM
+#### Example: Host Networking Mode for connecting to DCGM
 
 ```yaml
 dcgm:

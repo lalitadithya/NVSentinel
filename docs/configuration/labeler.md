@@ -126,4 +126,4 @@ metadata:
     app: nvidia-driver-daemonset
 ```
 
-These are the default labels applied by NVIDIA GPU Operator. If your GPU operands uses different labels, the labeler will not detect the components.
+If your GPU Operator configures its operands with different labels, the labeler will not detect the components.
