@@ -4,13 +4,6 @@
 
 The Fault Quarantine module isolates nodes with detected hardware or software failures by cordoning and/or tainting them. This document covers all Helm configuration options available for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- Understanding of Kubernetes taints, cordons, and node scheduling
-- Familiarity with CEL (Common Expression Language) syntax
-- MongoDB or PostgreSQL datastore configured
-
 ## Configuration Reference
 
 ### Module Enable/Disable
@@ -45,15 +38,6 @@ Sets the verbosity level for fault-quarantine logs.
 ```yaml
 fault-quarantine:
   logLevel: info  # Options: debug, info, warn, error
-```
-
-### Dry Run Mode
-
-Enables testing mode where no actual cordons or taints are applied, only logged.
-
-```yaml
-global:
-  dryRun: true
 ```
 
 ### Label Prefix

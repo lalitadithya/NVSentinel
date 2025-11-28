@@ -4,12 +4,6 @@
 
 The Platform Connectors module acts as the central communication hub for NVSentinel. It receives health events from monitors via Unix socket, stores them in the database, and enriches events with node metadata from Kubernetes. This document covers all Helm configuration options for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- MongoDB or PostgreSQL datastore configured
-- Understanding of Kubernetes node labels and metadata
-
 ## Configuration Reference
 
 ### Resources

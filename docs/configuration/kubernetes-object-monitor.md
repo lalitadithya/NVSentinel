@@ -4,13 +4,6 @@
 
 The Kubernetes Object Monitor module watches Kubernetes resources and generates health events when resources enter unhealthy states. This document covers all Helm configuration options for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- Understanding of Kubernetes resource types and API structure
-- Familiarity with CEL (Common Expression Language) syntax
-- Knowledge of Custom Resource Definitions (CRDs) in your cluster
-
 ## Configuration Reference
 
 ### Module Enable/Disable

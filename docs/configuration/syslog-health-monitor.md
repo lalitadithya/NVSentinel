@@ -4,13 +4,6 @@
 
 The Syslog Health Monitor module watches system logs for GPU errors (XID/SXID) and GPU-fallen-off events by reading journald logs. This document covers all Helm configuration options for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- Understanding of systemd journald logging
-- Access to host system logs on GPU nodes
-- MongoDB or PostgreSQL datastore configured
-
 ## Configuration Reference
 
 ### Module Enable/Disable

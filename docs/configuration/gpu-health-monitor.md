@@ -4,13 +4,6 @@
 
 The GPU Health Monitor module watches GPU health using NVIDIA DCGM (Data Center GPU Manager) and reports hardware failures. This document covers all Helm configuration options for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- Understanding of NVIDIA DCGM deployment modes
-- NVIDIA GPU Operator or DCGM installed in the cluster
-- Knowledge of your DCGM deployment architecture
-
 ## DCGM Deployment Modes
 
 DCGM (Data Center GPU Manager) always runs as a DaemonSet with one pod per GPU node. The GPU Health Monitor can connect to DCGM in two modes:

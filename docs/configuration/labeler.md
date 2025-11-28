@@ -4,13 +4,6 @@
 
 The Labeler module automatically applies labels to Kubernetes nodes based on GPU runtime components. It watches DCGM and driver pods deployed by GPU Operator and detects Kata Containers runtime. This document covers all Helm configuration options for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- NVIDIA GPU Operator deployed in the cluster
-- Understanding of Kubernetes node labels
-- MongoDB or PostgreSQL datastore configured
-
 ## Labels Applied
 
 The labeler automatically manages these node labels:

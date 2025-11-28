@@ -4,14 +4,6 @@
 
 The Event Exporter module exports health events from NVSentinel to external systems using CloudEvents format over HTTP. This document covers all Helm configuration options for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- External event ingestion endpoint (HTTP/HTTPS)
-- OIDC authentication endpoint and credentials
-- Kubernetes secret containing OIDC client secret
-- MongoDB or PostgreSQL datastore configured
-
 ## Configuration Reference
 
 ### Module Enable/Disable

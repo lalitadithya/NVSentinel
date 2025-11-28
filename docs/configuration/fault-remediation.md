@@ -4,14 +4,6 @@
 
 The Fault Remediation module creates maintenance Custom Resources (CRs) that trigger external repair systems to fix faulty nodes. This document covers all Helm configuration options and extension points for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- Understanding of Kubernetes Custom Resource Definitions (CRDs)
-- Familiarity with Go templates
-- A maintenance operator (like Janitor) that watches and acts on maintenance CRs
-- MongoDB or PostgreSQL datastore configured
-
 ## Configuration Reference
 
 ### Module Enable/Disable
@@ -46,15 +38,6 @@ Sets the verbosity level for fault-remediation logs.
 ```yaml
 fault-remediation:
   logLevel: info  # Options: debug, info, warn, error
-```
-
-### Dry Run Mode
-
-Enables testing mode where maintenance CRs are not created, only logged.
-
-```yaml
-global:
-  dryRun: true
 ```
 
 ## Maintenance Resource Configuration

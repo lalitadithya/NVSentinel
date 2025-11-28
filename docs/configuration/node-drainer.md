@@ -4,13 +4,6 @@
 
 The Node Drainer module evacuates workloads from quarantined nodes, safely moving pods to healthy nodes. This document covers all Helm configuration options available for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- Understanding of Kubernetes pod eviction and disruption budgets
-- Familiarity with pod termination grace periods
-- MongoDB or PostgreSQL datastore configured
-
 ## Configuration Reference
 
 ### Module Enable/Disable
@@ -45,15 +38,6 @@ Sets the verbosity level for node-drainer logs.
 ```yaml
 node-drainer:
   logLevel: info  # Options: debug, info, warn, error
-```
-
-### Dry Run Mode
-
-Enables testing mode where drain actions are logged but not executed.
-
-```yaml
-global:
-  dryRun: true
 ```
 
 ### Eviction Timeout

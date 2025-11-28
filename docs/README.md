@@ -6,7 +6,7 @@ Welcome! This documentation will help you understand, configure, and operate NVS
 
 ### [OVERVIEW.md](./OVERVIEW.md) - Start Here
 **Read this first** (5 min read)  
-A plain-English introduction to what NVSentinel is, the problems it solves, and how it works. Perfect for  understanding the big picture.
+A plain-English introduction to what NVSentinel is, the problems it solves, and how it works. Perfect for understanding the big picture.
 
 ### [INTEGRATIONS.md](./INTEGRATIONS.md) - How to Use NVSentinel
 **Essential for platform engineers** (10 min read)  

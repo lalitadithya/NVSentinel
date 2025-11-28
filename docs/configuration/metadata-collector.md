@@ -4,13 +4,6 @@
 
 The Metadata Collector module collects GPU metadata using NVIDIA NVML (Management Library) and writes it to a shared file. Other modules read this file to enrich health events with GPU serial numbers, UUIDs, and topology information. This document covers all Helm configuration options for system administrators.
 
-## Prerequisites
-
-- NVSentinel installed in your Kubernetes cluster
-- NVIDIA driver installed on GPU nodes
-- Understanding of Kubernetes init containers
-- Knowledge of your container runtime configuration
-
 ## Configuration Reference
 
 ### Module Enable/Disable
