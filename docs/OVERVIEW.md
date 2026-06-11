@@ -44,6 +44,20 @@ For recoverable GPU faults, NVSentinel can reset individual GPUs instead of rebo
 
 NVSentinel supports MongoDB and PostgreSQL as database backends. Both provide change streams for real-time event processing. MongoDB uses native change streams. PostgreSQL uses LISTEN/NOTIFY. All health events are persisted with full audit trails.
 
+## GPU support
+
+NVSentinel has been validated on the following NVIDIA GPU architectures:
+
+| Architecture | Example GPUs |
+|---|---|
+| Volta | V100 |
+| Ampere | A100 |
+| Hopper | H100 |
+| Ada Lovelace | L4 Tensor Core GPU, L40, L40S |
+| Blackwell | B200, GB200, GB300, RTX Pro 6000 |
+
+NVSentinel is designed to work with any GPU supported by the NVIDIA GPU Operator. Architectures and GPUs not listed above have not been formally validated but may work in your environment.
+
 ## Getting started
 
 ```bash

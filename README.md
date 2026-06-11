@@ -279,6 +279,20 @@ For detailed module configuration, see the **[Helm Chart Configuration Guide](di
 - **[Metadata Collector](docs/metadata-collector.md)**: Gathers GPU and NVSwitch topology information
 - **[Log Collection](docs/log-collection.md)**: Collects diagnostic logs and GPU reports for troubleshooting
 
+## 🖥️ GPU Support
+
+NVSentinel has been validated on the following NVIDIA GPU architectures:
+
+| Architecture | Example GPUs |
+|---|---|
+| Volta | V100 |
+| Ampere | A100 |
+| Hopper | H100 |
+| Ada Lovelace | L4 Tensor Core GPU, L40, L40S |
+| Blackwell | B200, GB200, GB300, RTX Pro 6000 |
+
+NVSentinel is designed to work with any GPU supported by the NVIDIA GPU Operator. Architectures and GPUs not listed above have not been formally validated but may work in your environment.
+
 ## 📋 Requirements
 
 - **Kubernetes**: 1.25 or later
