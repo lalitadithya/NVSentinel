@@ -58,6 +58,8 @@ NVSentinel has been validated on the following NVIDIA GPU architectures:
 
 NVSentinel is designed to work with any GPU supported by the NVIDIA GPU Operator. Architectures and GPUs not listed above have not been formally validated but may work in your environment.
 
+> **Note on nccl-loopback preflight check**: Most NVSentinel components do not compile GPU code and work across all validated architectures. The optional nccl-loopback preflight check (NCCL bandwidth test) compiles GPU kernels and targets Ampere, Ada Lovelace, Hopper, and Blackwell only — it does not support Volta (V100). Disable or skip this check on Volta nodes via the [preflight configuration](./configuration/preflight.md).
+
 ## Getting started
 
 ```bash
