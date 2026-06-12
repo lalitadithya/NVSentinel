@@ -393,13 +393,8 @@ func (r *FaultRemediationReconciler) handleCancellationEvent(
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			slog.WarnContext(ctx, "Node no longer exists, marking cancellation event as terminal", "node", nodeName)
-			if updateErr := r.updateNodeRemediatedStatus(ctx, healthEventStore, eventWithToken, true); updateErr != nil {
-				return ctrl.Result{}, updateErr
-			}
-			if err := safeMarkProcessed(ctx, watcherInstance, eventWithToken.ResumeToken, nodeName); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{}, nil
+
+			return r.markEventTerminalAndProcessed(ctx, healthEventStore, eventWithToken, watcherInstance, nodeName, true)
 		}
 
 		slog.ErrorContext(ctx, "Failed to get remediation state for node",
@@ -485,10 +480,8 @@ func (r *FaultRemediationReconciler) handleRemediationEvent(
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			slog.WarnContext(ctx, "Node no longer exists, marking remediation event as stale", "node", nodeName)
-			if updateErr := r.updateNodeRemediatedStatus(ctx, healthEventStore, eventWithToken, false); updateErr != nil {
-				return ctrl.Result{}, updateErr
-			}
-			return r.markProcessedOrError(ctx, watcherInstance, eventWithToken, nodeName)
+
+			return r.markEventTerminalAndProcessed(ctx, healthEventStore, eventWithToken, watcherInstance, nodeName, false)
 		}
 
 		metrics.ProcessingErrors.WithLabelValues("cr_status_check_error", nodeName).Inc()
@@ -841,6 +834,23 @@ func (r *FaultRemediationReconciler) markProcessedOrError(
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// markEventTerminalAndProcessed writes faultRemediated and advances the change-stream token.
+// Used when the target Node no longer exists so the event is not retried.
+func (r *FaultRemediationReconciler) markEventTerminalAndProcessed(
+	ctx context.Context,
+	healthEventStore datastore.HealthEventStore,
+	eventWithToken datastore.EventWithToken,
+	watcherInstance datastore.ChangeStreamWatcher,
+	nodeName string,
+	remediated bool,
+) (ctrl.Result, error) {
+	if err := r.updateNodeRemediatedStatus(ctx, healthEventStore, eventWithToken, remediated); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return r.markProcessedOrError(ctx, watcherInstance, eventWithToken, nodeName)
 }
 
 func (r *FaultRemediationReconciler) updateNodeRemediatedStatus(
