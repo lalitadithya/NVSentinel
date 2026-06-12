@@ -26,6 +26,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -390,6 +391,17 @@ func (r *FaultRemediationReconciler) handleCancellationEvent(
 
 	remediationState, _, err := r.annotationManager.GetRemediationState(ctx, nodeName)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			slog.WarnContext(ctx, "Node no longer exists, marking cancellation event as terminal", "node", nodeName)
+			if updateErr := r.updateNodeRemediatedStatus(ctx, healthEventStore, eventWithToken, true); updateErr != nil {
+				return ctrl.Result{}, updateErr
+			}
+			if err := safeMarkProcessed(ctx, watcherInstance, eventWithToken.ResumeToken, nodeName); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{}, nil
+		}
+
 		slog.ErrorContext(ctx, "Failed to get remediation state for node",
 			"node", nodeName,
 			"error", err)
@@ -471,6 +483,14 @@ func (r *FaultRemediationReconciler) handleRemediationEvent(
 	shouldCreateCR, existingCR, existingCRRemediated, err := r.checkExistingCRStatus(ctx, healthEvent,
 		healthEventWithStatus.CreatedAt, groupConfig)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			slog.WarnContext(ctx, "Node no longer exists, marking remediation event as stale", "node", nodeName)
+			if updateErr := r.updateNodeRemediatedStatus(ctx, healthEventStore, eventWithToken, false); updateErr != nil {
+				return ctrl.Result{}, updateErr
+			}
+			return r.markProcessedOrError(ctx, watcherInstance, eventWithToken, nodeName)
+		}
+
 		metrics.ProcessingErrors.WithLabelValues("cr_status_check_error", nodeName).Inc()
 		slog.ErrorContext(ctx, "Error checking existing CR status", "node", nodeName, "error", err)
 
