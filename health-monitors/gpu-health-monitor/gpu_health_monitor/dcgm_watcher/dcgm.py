@@ -67,10 +67,14 @@ class DCGMWatcher:
         thermal_margin_enabled: bool = False,
         metadata_reader: MetadataReader | None = None,
         dcgm_mode: str = "remote",
+        suppressed_error_codes: frozenset[str] | None = None,
     ) -> None:
         self._addr = addr
         self._poll_interval_seconds = poll_interval_seconds
         self._callbacks = callbacks
+        self._suppressed_error_codes = frozenset(suppressed_error_codes or ())
+        if self._suppressed_error_codes:
+            log.info(f"Suppressing DCGM incidents for error codes: {sorted(self._suppressed_error_codes)}")
         thermal_margin_supported = "gputemplimitmonitoringenabled" in DCGM_FIELDS_MONITORING
         self._thermal_margin_enabled = thermal_margin_enabled and thermal_margin_supported
         if thermal_margin_enabled and not thermal_margin_supported:
@@ -242,12 +246,21 @@ class DCGMWatcher:
                     metrics.dcgm_health_check_unknown_system_skipped.inc()
                     continue
 
-                health_status[watch_name].status = types.HealthStatus(int(incident.health))
                 gpu_id = incident.entityInfo.entityId
                 fallback_error_code = self._error_codes.get(dcgm_errors.DCGM_FR_UNKNOWN, "DCGM_FR_UNKNOWN")
                 error_code = self._error_codes.get(incident.error.code, fallback_error_code)
                 if error_code == fallback_error_code:
                     log.warning(f"Unknown DCGM error code {incident.error.code} for entity {gpu_id}")
+
+                if error_code in self._suppressed_error_codes:
+                    log.debug(
+                        f"Suppressing incident for watch={watch_name} entity={gpu_id} "
+                        f"error_code={error_code}: high-frequency non-actionable event"
+                    )
+                    metrics.dcgm_health_check_suppressed_incidents.labels(error_code).inc()
+                    continue
+
+                health_status[watch_name].status = types.HealthStatus(int(incident.health))
                 error_msg = incident.error.msg
 
                 log.debug(f"incident.error.code is {incident.error.code} and error msg is {error_msg}")
