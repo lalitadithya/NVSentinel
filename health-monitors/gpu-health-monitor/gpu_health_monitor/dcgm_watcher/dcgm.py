@@ -153,6 +153,29 @@ class DCGMWatcher:
             health_status[system_name] = types.HealthDetails(status=types.HealthStatus.PASS, entity_failures={})
         return health_status
 
+    def _suppress_configured_error_codes(self, health_status: dict[str, types.HealthDetails]) -> None:
+        if not self._suppressed_error_codes:
+            return
+
+        for watch_name, details in health_status.items():
+            suppressed_gpu_ids = [
+                gpu_id
+                for gpu_id, failure in details.entity_failures.items()
+                if failure.code in self._suppressed_error_codes
+            ]
+            for gpu_id in suppressed_gpu_ids:
+                error_code = details.entity_failures[gpu_id].code
+                log.debug(
+                    f"Suppressing incident for watch={watch_name} entity={gpu_id} "
+                    f"error_code={error_code}: high-frequency non-actionable event"
+                )
+                metrics.dcgm_health_check_suppressed_incidents.labels(error_code).inc()
+                del details.entity_failures[gpu_id]
+
+            # A watch with no remaining failures is healthy again.
+            if suppressed_gpu_ids and not details.entity_failures:
+                details.status = types.HealthStatus.PASS
+
     def _fire_callback_funcs(self, func_name: str, args: list[any]):
         def done_callback(class_name: str, func_name: str, future):
             e = future.exception()
@@ -246,21 +269,12 @@ class DCGMWatcher:
                     metrics.dcgm_health_check_unknown_system_skipped.inc()
                     continue
 
+                health_status[watch_name].status = types.HealthStatus(int(incident.health))
                 gpu_id = incident.entityInfo.entityId
                 fallback_error_code = self._error_codes.get(dcgm_errors.DCGM_FR_UNKNOWN, "DCGM_FR_UNKNOWN")
                 error_code = self._error_codes.get(incident.error.code, fallback_error_code)
                 if error_code == fallback_error_code:
                     log.warning(f"Unknown DCGM error code {incident.error.code} for entity {gpu_id}")
-
-                if error_code in self._suppressed_error_codes:
-                    log.debug(
-                        f"Suppressing incident for watch={watch_name} entity={gpu_id} "
-                        f"error_code={error_code}: high-frequency non-actionable event"
-                    )
-                    metrics.dcgm_health_check_suppressed_incidents.labels(error_code).inc()
-                    continue
-
-                health_status[watch_name].status = types.HealthStatus(int(incident.health))
                 error_msg = incident.error.msg
 
                 log.debug(f"incident.error.code is {incident.error.code} and error msg is {error_msg}")
@@ -568,6 +582,7 @@ class DCGMWatcher:
                                 health_status[DCGM_FIELDS_MONITORING["gputemplimitmonitoringenabled"].watch_name] = (
                                     margin_details
                                 )
+                            self._suppress_configured_error_codes(health_status)
                             log.debug("Publish DCGM health checks")
                             self._fire_callback_funcs(
                                 types.CallbackInterface.health_event_occurred.__name__,
