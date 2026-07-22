@@ -433,7 +433,7 @@ Readiness is reported via the `Ready` status condition (the `READY` column above
 
 #### RBAC (aggregated ClusterRole)
 
-The controller reads scheduler `PodGroup` resources cluster-wide through an **aggregated ClusterRole** (`RELEASE-gang-discovery`). The chart ships a built-in contributor role covering the native `scheduling.k8s.io` resources plus the default `gangDiscovery.podGroupGVR`. To let the controller read a scheduler CRD that isn't covered (e.g. a namespace registers Volcano but the default is native), apply a `ClusterRole` labeled for aggregation — it is merged in automatically, with no preflight change or restart:
+The controller reads scheduler `PodGroup` resources cluster-wide through an **aggregated ClusterRole** (`{release}-gang-discovery`). The chart ships a built-in contributor role covering the native `scheduling.k8s.io` resources plus the default `gangDiscovery.podGroupGVR`. To let the controller read a scheduler CRD that isn't covered (e.g. a namespace registers Volcano but the default is native), apply a `ClusterRole` labeled for aggregation — it is merged in automatically, with no preflight change or restart:
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
