@@ -40,16 +40,6 @@ navigation:
         path: syslog-health-monitor.md
       - page: CSP Health Monitor IAM
         path: csp-health-monitor-iam.md
-      - section: NIC Health Monitor
-        contents:
-          - page: Overview
-            path: nic-health-monitor/Overview.md
-          - page: Link State Detection
-            path: nic-health-monitor/link-state-detection.md
-          - page: Link Counter Detection
-            path: nic-health-monitor/link-counter-detection.md
-          - page: Syslog Detection and Correlation
-            path: nic-health-monitor/syslog-detection-correlation.md
       - page: Kubernetes Object Monitor
         path: kubernetes-object-monitor.md
       - page: Event Exporter
