@@ -854,8 +854,8 @@ RoCE (RDMA over Converged Ethernet) devices appear in **both** `/sys/class/net` 
 ### 9.1 GID Table Information (RoCE Routing Diagnostics)
 
 The GID (Global Identifier) table is critical for RoCE routing. Each device exposes GIDs at:
-- `/sys/class/infiniband/{dev}/ports/{port}/gids/<index>`
-- `/sys/class/infiniband/{dev}/ports/{port}/gid_attrs/types/<index>`
+- `/sys/class/infiniband/{dev}/ports/{port}/gids/{index}`
+- `/sys/class/infiniband/{dev}/ports/{port}/gid_attrs/types/{index}`
 
 **GID Types** ([Linux Kernel sysfs ABI](https://www.kernel.org/doc/Documentation/ABI/stable/sysfs-class-infiniband)):
 - `IB/RoCE v1` = InfiniBand and RoCE v1 (GRH-based, layer 2)

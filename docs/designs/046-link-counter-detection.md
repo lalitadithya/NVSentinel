@@ -741,7 +741,7 @@ type PortStateSnapshot struct {
 }
 ```
 
-**Map keys**: Counter snapshots and breach flags use the key format `<device>:{port}:<counter_name>` (e.g., `mlx5_0:1:link_downed`). Port state snapshots use `<device>_{port}` (e.g., `mlx5_0_1`). `KnownDevices` is a flat list of device names (e.g., `["mlx5_0", "mlx5_1", ...]`).
+**Map keys**: Counter snapshots and breach flags use the key format `{device}:{port}:{counter_name}` (e.g., `mlx5_0:1:link_downed`). Port state snapshots use `{device}_{port}` (e.g., `mlx5_0_1`). `KnownDevices` is a flat list of device names (e.g., `["mlx5_0", "mlx5_1", ...]`).
 
 **Save triggers**: The state file is written after each poll cycle completes (both state and counter checks). Errors during save are logged as warnings but do not halt monitoring.
 
