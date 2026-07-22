@@ -160,7 +160,7 @@ The `MultipleRemediations` rule fires when five or more remediations have been p
 After the underlying hardware issue is resolved, remove the condition manually:
 
 ```bash
-kubectl get node <NODE_NAME> -o json \
+kubectl get node {NODE_NAME} -o json \
   | jq '.status.conditions |= map(select(.type != "MultipleRemediations"))' \
   | kubectl replace -f - --subresource=status
 ```

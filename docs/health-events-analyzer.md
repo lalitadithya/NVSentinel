@@ -12,7 +12,7 @@ Individual health events capture what happened at a point in time, but many hard
 
 - **Recurring failures**: A GPU that fails, recovers, and fails again within a week is a fundamentally different signal than a one-time transient error
 - **Die-level clustering**: Errors concentrated on the same GPC or TPC inside a GPU indicate a localized hardware defect that per-event monitoring cannot see
-- **NVLink register ambiguity**: XID 74 carries four register fields (reg0–reg4) that distinguish signal integrity errors, ECC parity errors, outright hardware failures, and unexpected conditions — decoding them requires analysis beyond what the raw event stream provides
+- **NVLink register ambiguity**: XID 74 carries five register fields (reg0–reg4) that distinguish signal integrity errors, ECC parity errors, outright hardware failures, and unexpected conditions — decoding them requires analysis beyond what the raw event stream provides
 - **Repair effectiveness**: When a node has been remediated more than once in a short window, automated repair is not resolving the underlying problem and operator intervention is needed
 
 ## How It Works

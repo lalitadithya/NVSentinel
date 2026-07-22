@@ -14,15 +14,17 @@ Controls whether the incluster-file-server module is deployed in the cluster. Th
 global:
   inclusterFileServer:
     enabled: false
-    metricsPort: 9001
-    cleanupMetricsPort: 9002
+
+incluster-file-server:
+  metricsPort: 9001
+  cleanupMetricsPort: 9002
 ```
 
 #### metricsPort
-Port on which the nginx access-log Prometheus exporter listens. Default: `9001`.
+Port on which the nginx access-log Prometheus exporter listens. Configured under `incluster-file-server:`, not `global`. Default: `9001`.
 
 #### cleanupMetricsPort
-Port on which the log-cleanup sidecar exposes its Prometheus metrics. Default: `9002`.
+Port on which the log-cleanup sidecar exposes its Prometheus metrics. Configured under `incluster-file-server:`, not `global`. Default: `9002`.
 
 ### Persistence
 
@@ -137,16 +139,16 @@ incluster-file-server:
 
 ## Accessing Stored Logs
 
-Log bundles are served at `http://<service>/<NODE_NAME>/` and organised by collection timestamp beneath each node directory. To browse logs from a local machine, port-forward the service:
+Log bundles are served at `http://{service}/{NODE_NAME}/` and organised by collection timestamp beneath each node directory. To browse logs from a local machine, port-forward the service:
 
 ```bash
 kubectl port-forward -n nvsentinel svc/nvsentinel-incluster-file-server 8080:80
 ```
 
-Then open `http://localhost:8080/<NODE_NAME>/` in a browser or fetch files with `curl`:
+Then open `http://localhost:8080/{NODE_NAME}/` in a browser or fetch files with `curl`:
 
 ```bash
-curl http://localhost:8080/<NODE_NAME>/
+curl http://localhost:8080/{NODE_NAME}/
 ```
 
 ## Log Cleanup and Storage Management

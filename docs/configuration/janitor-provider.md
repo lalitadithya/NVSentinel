@@ -45,16 +45,16 @@ janitor-provider:
     secretName: ""
 ```
 
-#### enabled
+### enabled
 When `true`, the gRPC server requires TLS. Must match `janitor.config.cspProvider.tls.enabled`.
 
-#### certDir
+### certDir
 Path inside the container where the TLS certificate and key are mounted.
 
-#### issuerName
+### issuerName
 Name of the cert-manager ClusterIssuer used to issue the gRPC server certificate.
 
-#### secretName
+### secretName
 Name of the Kubernetes Secret where the issued certificate is stored. When empty, the chart generates a name automatically.
 
 ## Authentication
@@ -67,10 +67,10 @@ janitor-provider:
       - "nvsentinel-csp-provider"
 ```
 
-#### enabled
+### enabled
 When `true`, the Janitor Provider validates the ServiceAccount token presented by the Janitor on every gRPC call.
 
-#### audiences
+### audiences
 List of accepted token audiences. Must include the value set in `janitor.config.cspProvider.auth.audience`.
 
 ## Cloud Provider Selection
@@ -97,13 +97,13 @@ janitor-provider:
       iamRoleName: ""
 ```
 
-#### region
+### region
 AWS region where the EC2 instances are running (e.g. `us-west-2`).
 
-#### accountId
+### accountId
 12-digit AWS account ID hosting the EKS cluster.
 
-#### iamRoleName
+### iamRoleName
 Name of the IAM role used for IRSA. The role must include `ec2:RebootInstances` and `ec2:TerminateInstances` permissions. See [CSP Health Monitor IAM Setup](../csp-health-monitor-iam.md) for the general Workload Identity pattern; apply the same approach for the Janitor Provider ServiceAccount.
 
 ## GCP
@@ -120,13 +120,13 @@ janitor-provider:
       serviceAccount: ""
 ```
 
-#### project
+### project
 GCP project ID where the GKE cluster and Compute Engine instances reside.
 
-#### zone
+### zone
 GCP zone of the instances (e.g. `us-central1-a`).
 
-#### serviceAccount
+### serviceAccount
 GCP Service Account name, without the `@project.iam.gserviceaccount.com` suffix. The SA must have `compute.instances.reset` and `compute.instances.stop` permissions. See [CSP Health Monitor IAM Setup](../csp-health-monitor-iam.md) for the Workload Identity binding pattern.
 
 ## Azure
@@ -144,16 +144,16 @@ janitor-provider:
       clientId: ""
 ```
 
-#### subscriptionId
+### subscriptionId
 Azure subscription ID containing the AKS cluster and VM resources.
 
-#### resourceGroup
+### resourceGroup
 Azure resource group where the VM Scale Set or individual VMs are managed.
 
-#### location
+### location
 Azure region of the resources (e.g. `eastus`).
 
-#### clientId
+### clientId
 Client ID of the Managed Identity used for Workload Identity authentication. The identity must have `Microsoft.Compute/virtualMachines/restart/action` and `Microsoft.Compute/virtualMachines/delete/action` permissions on the relevant resource group.
 
 ## OCI
@@ -172,19 +172,19 @@ janitor-provider:
       principalId: ""
 ```
 
-#### region
+### region
 OCI region identifier (e.g. `us-phoenix-1`).
 
-#### compartment
+### compartment
 OCID of the OCI compartment containing the compute instances.
 
-#### credentialsFile
+### credentialsFile
 Path to an OCI credentials file inside the container. Leave empty to use Workload Identity (recommended for production).
 
-#### profile
+### profile
 Profile name within the credentials file. Defaults to `DEFAULT`. Ignored when `credentialsFile` is empty.
 
-#### principalId
+### principalId
 OCI principal OCID used for Workload Identity. Required when `credentialsFile` is empty.
 
 ## Generic / Bare-Metal
@@ -203,19 +203,19 @@ janitor-provider:
       imagePullSecrets: ""
 ```
 
-#### rebootImage
+### rebootImage
 Container image used by the reboot Job. Must include `chroot` and standard shell utilities.
 
-#### useSysrqReboot
+### useSysrqReboot
 When `false` (default), the Job runs `chroot /host reboot` to trigger a clean OS shutdown and restart.
 
 When `true`, the Job writes `b` to `/proc/sysrq-trigger`, triggering an immediate kernel reboot via the Linux Magic SysRq interface. Use this only when `chroot /host reboot` is unavailable — for example, when the node OS has a read-only root filesystem or a custom OS image that does not expose a reboot binary at the standard path.
 
-#### rebootJobNamespace
+### rebootJobNamespace
 Kubernetes namespace where the reboot Job is created. Defaults to the janitor-provider namespace when empty.
 
-#### rebootJobTTLSeconds
+### rebootJobTTLSeconds
 Time in seconds after Job completion before Kubernetes deletes the Job and its pod. Defaults to `3600`.
 
-#### imagePullSecrets
+### imagePullSecrets
 Name of an image pull secret to attach to the reboot Job, if `rebootImage` is pulled from a private registry.

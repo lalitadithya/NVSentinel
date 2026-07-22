@@ -62,17 +62,19 @@ global:
     enabled: true
 
 janitor:
-  manualMode: false       # Set to true to skip Provider calls; requires human approval
-
-  nodes:
-    exclusions:           # Nodes the Janitor will never act on
-      - control-plane-node-1
-      - critical-infra-node-1
-
-  ttl: "336h"             # Auto-delete completed CRs after this duration (default: 14 days)
+  config:
+    manualMode: false     # Set to true to skip Provider calls; requires human approval
+    nodes:
+      exclusions:         # Nodes the Janitor will never act on
+        - control-plane-node-1
+        - critical-infra-node-1
+  ttl:
+    enabled: true
+    defaultTTL: "336h"   # Auto-delete completed CRs after this duration (default: 14 days)
 
 janitor-provider:
-  provider: aws           # Cloud provider: aws | gcp | azure | oci | nebius | generic | kind | kwok
+  csp:
+    provider: aws         # Cloud provider: aws | gcp | azure | oci | nebius | generic | kind | kwok
 ```
 
 See [Janitor configuration](configuration/janitor.md) and [Janitor Provider configuration](configuration/janitor-provider.md) for the full Helm reference.

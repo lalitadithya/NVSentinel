@@ -68,7 +68,7 @@ Repeated non-fatal syslog patterns (3 in 1 hour on the same node) escalate to `C
 
 ## Architecture
 
-```
+```text
 Per-Node DaemonSets                     Centralized
 ─────────────────────────────────────   ────────────────────────────────
 NIC Health Monitor                      Health Events Analyzer

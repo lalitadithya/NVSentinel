@@ -120,13 +120,13 @@ slurm-drain-monitor:
 Unique identifier for the pattern. Used in logs and health event metadata.
 
 #### regex
-Regular expression matched against each drain reason string (after splitting on `reasonDelimiter`). The first matching pattern wins.
+Regular expression matched against each drain reason string (after splitting on `reasonDelimiter`). All patterns are evaluated independently — if multiple patterns match the same drain reason, each emits a separate health event.
 
 #### checkName
 Name of the NVSentinel health check reported in the generated health event.
 
 #### componentClass
-Component class associated with the health event. Always `NODE` for Slurm drain events — a drain applies to the whole node, not a specific GPU or NIC.
+Component class associated with the health event. Configurable string forwarded as-is to the health event. Typically `NODE` for Slurm drain events since a drain applies to the whole node, but can be set to any valid component class.
 
 #### isFatal
 When `false` (default), the health event triggers `CONTACT_SUPPORT` rather than the full quarantine + drain + remediation pipeline. Set to `true` only if you want the node to be automatically quarantined and remediated when this pattern matches.
