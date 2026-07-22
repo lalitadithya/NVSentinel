@@ -8,7 +8,7 @@ NVSentinel can record a **durable, file-based audit trail** of **HTTP write oper
 
 - **Forensics and accountability**: When investigating who cordoned a node, what actions NVSentinel has taken, a dedicated audit file avoids hunting through high-volume application logs.
 - **Separation from debug logs**: Audit entries are **structured JSON** (one object per line) at a known path, independent of `slog` verbosity or log pipeline drops.
-- **CSP and Kubernetes coverage**: Audit logs is also logging CSP API calls for janitor and janitor provider actions.
+- **CSP and Kubernetes coverage**: Audit logging also covers CSP API calls for janitor and janitor provider actions.
 
 ## How It Works
 
@@ -29,7 +29,7 @@ flowchart LR
   end
   HTTP -->|writes| K8S[Kubernetes API]
   HTTP -->|writes| CSP[CSP HTTP APIs]
-  RT -->|JSON lines| LOG["/var/log/nvsentinel/{pod}-audit.log"]
+  RT -->|JSON lines| LOG["/var/log/nvsentinel/{POD_NAME}-audit.log"]
 ```
 
 When Helm enables audit logging, the chart also mounts a **hostPath** volume at `/var/log/nvsentinel` (and runs an init container to set permissions) so logs persist on the node and can be collected by your log agent.

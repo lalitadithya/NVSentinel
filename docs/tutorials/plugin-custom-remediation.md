@@ -76,7 +76,7 @@ condition:
 ```yaml
 status:
   conditions:
-    - type: {completeConditionType}   # e.g. "Complete"
+    - type: "{completeConditionType}"   # e.g. "Complete"
       status: "True"                  # True = success, False = failed (retry allowed)
       reason: RepairSucceeded
       message: Node hardware repaired and validated

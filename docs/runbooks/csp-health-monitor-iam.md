@@ -64,10 +64,10 @@ gcloud iam service-accounts add-iam-policy-binding \
 ### Test Permissions Manually
 
 ```bash
-gcloud logging read "logName=\"projects/{PROJECT_ID}/logs/cloudaudit.googleapis.com%2Fsystem_event\"" \
-    --project={PROJECT_ID} \
+gcloud logging read "logName=\"projects/{TARGET_PROJECT_ID}/logs/cloudaudit.googleapis.com%2Fsystem_event\"" \
+    --project={TARGET_PROJECT_ID} \
     --limit=1 \
-    --impersonate-service-account={GCP_SA_NAME}@{PROJECT_ID}.iam.gserviceaccount.com
+    --impersonate-service-account={GCP_SA_NAME}@{TARGET_PROJECT_ID}.iam.gserviceaccount.com
 ```
 
 ## AWS Issues

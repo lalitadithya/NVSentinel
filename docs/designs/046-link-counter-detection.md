@@ -22,7 +22,7 @@
 9. [Data Structures](#9-data-structures)
 10. [Configuration](#10-configuration)
 11. [Event Management](#11-event-management)
-- [Appendix A: Quick Reference - Counter Thresholds](#appendix-a-quick-reference---counter-thresholds)
+- [Appendix A: Quick Reference - Default Counter Thresholds](#appendix-a-quick-reference---default-counter-thresholds)
 
 **Related Documents:**
 - [Link State Detection](./047-link-state-detection.md) - UP/DOWN state monitoring
@@ -57,7 +57,7 @@ This monitor uses a binary severity model based on **workload impact**:
 
 ### 1.4 Counter Detection Overview Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                      LINK COUNTER DETECTION FLOW                                 │
 ├─────────────────────────────────────────────────────────────────────────────────┤
@@ -65,7 +65,7 @@ This monitor uses a binary severity model based on **workload impact**:
 │  ┌─────────────────────────────────────────────────────────────────────────┐    │
 │  │                     DATA SOURCES (sysfs)                                 │    │
 │  ├─────────────────────────────────────────────────────────────────────────┤    │
-│  │  /sys/class/infiniband/<dev>/ports/<port>/                              │    │
+│  │  /sys/class/infiniband/{dev}/ports/{port}/                              │    │
 │  │  ├── counters/                                                           │    │
 │  │  │   ├── symbol_error                →  PHY bit errors (before FEC)     │    │
 │  │  │   ├── link_error_recovery         →  Link retraining events          │    │
@@ -81,7 +81,7 @@ This monitor uses a binary severity model based on **workload impact**:
 │  │      ├── rnr_nak_retry_err           →  Connection severed (FATAL)      │    │
 │  │      └── req_transport_retries_exceeded → IB only (FATAL)               │    │
 │  │                                                                          │    │
-│  │  /sys/class/net/<interface>/statistics/                                  │    │
+│  │  /sys/class/net/{interface}/statistics/                                  │    │
 │  │  └── carrier_changes                 →  Link flap counter               │    │
 │  └─────────────────────────────────────────────────────────────────────────┘    │
 │                                     │                                            │
@@ -224,7 +224,7 @@ The following counters represent **absolute deterministic failure** when they in
 
 When hardware counters increment, they don't directly cause application failure—they trigger a reaction in the software stack. Understanding this interaction defines the "Fatal" threshold:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                    TRANSPORT LAYER RETRY WINDOW                                  │
 ├─────────────────────────────────────────────────────────────────────────────────┤
@@ -253,7 +253,7 @@ When hardware counters increment, they don't directly cause application failure�
 
 When the NIC sends a packet and the ACK never arrives:
 
-```
+```text
 Send Packet → Wait for ACK → Timeout → Retry (1) → Timeout → ... → Retry (N) → GIVE UP
 ```
 
@@ -323,7 +323,7 @@ The Degradation Monitor follows NVSentinel's established architectural pattern w
 
 ### 3.3 Degradation Check Data Flow (1s polling interval)
 
-```
+```text
 Reads:
 ├── counters/      → Standard IB counters (symbol_error, link_error_recovery, etc.)
 ├── hw_counters/   → Extended counters (roce_slow_restart, rnr_nak_retry_err, etc.)
@@ -378,7 +378,7 @@ Emits: Raw DEGRADATION events → Platform Connector → MongoDB
 
 This monitor tracks both **fatal counters** (deterministic workload failure) and **non-fatal counters** (degradation indicators). The `IsFatal` field in the HealthEvent distinguishes between them.
 
-#### 4.1.1 Standard Counters (`/sys/class/infiniband/<dev>/ports/<port>/counters/`)
+#### 4.1.1 Standard Counters (`/sys/class/infiniband/{dev}/ports/{port}/counters/`)
 
 | Counter                    | File Name                         | Degradation Meaning                                                                      | IsFatal | Alert Threshold                         | Source                                                                                                              |
 |----------------------------|-----------------------------------|------------------------------------------------------------------------------------------|---------|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------|
@@ -390,7 +390,7 @@ This monitor tracks both **fatal counters** (deterministic workload failure) and
 | **Buffer Overrun**         | `excessive_buffer_overrun_errors` | HCA internal buffer overflow—**lossless contract violated**. Packet dropped immediately. | **YES** | **> 0 (any)**                           | [IBM Redbooks](https://www.redbooks.ibm.com/redbooks/pdfs/sg247767.pdf)                                             |
 | **Port Transmit Discards** | `port_xmit_discards`              | TX discards due to congestion.                                                           | **No**  | > 100/sec                               |                                                                                                                     |
 
-#### 4.1.2 Extended Counters (`/sys/class/infiniband/<dev>/ports/<port>/hw_counters/`) — Non-Fatal
+#### 4.1.2 Extended Counters (`/sys/class/infiniband/{dev}/ports/{port}/hw_counters/`) — Non-Fatal
 
 All extended counters are **non-fatal** by default. They indicate congestion, retransmissions, or recoverable transport events. RDMA's reliable transport handles these automatically; workloads continue with potential performance impact.
 
@@ -415,9 +415,9 @@ All extended counters are **non-fatal** by default. They indicate congestion, re
 
 ### 4.2 Counter Locations
 
-- **Standard IB counters**: `/sys/class/infiniband/<dev>/ports/<port>/counters/` (symbol_error, link_downed, local_link_integrity_errors, etc.)
-- **Extended counters (Mellanox)**: `/sys/class/infiniband/<dev>/ports/<port>/hw_counters/` (rnr_nak_retry_err, roce_slow_restart, etc.)
-- **Ethernet stats (RoCE)**: `/sys/class/net/<iface>/statistics/` (carrier_changes)
+- **Standard IB counters**: `/sys/class/infiniband/{dev}/ports/{port}/counters/` (symbol_error, link_downed, local_link_integrity_errors, etc.)
+- **Extended counters (Mellanox)**: `/sys/class/infiniband/{dev}/ports/{port}/hw_counters/` (rnr_nak_retry_err, roce_slow_restart, etc.)
+- **Ethernet stats (RoCE)**: `/sys/class/net/{iface}/statistics/` (carrier_changes)
 
 ### 4.3 Diagnostic Commands
 
@@ -495,7 +495,7 @@ The following analysis validates the efficacy of the proposed monitoring design 
 *   **Local ACK Timeout (`local_ack_timeout_err` > 1/sec)**: In a reliable lossless network, ACKs should not be lost. A persistent rate of 1/sec implies a "Fabric Black Hole" (e.g., a specific bad ECMP path).
 
 > **Note on `rnr_nak_retry_err`**: This counter is **FATAL** (not a non-fatal threshold). Any increment indicates the Receiver Not Ready NAK retry limit has been exhausted and the connection has been severed. This is a terminal state of error handling.
-
+>
 > **Final Verdict**: These thresholds are calibrated to distinguish between background noise (standard FEC activity) and pathological hardware degradation that threatens AI training efficiency.
 
 ---
@@ -505,10 +505,10 @@ The following analysis validates the efficacy of the proposed monitoring design 
 ### 5.1 Mellanox Counter Reading
 
 For Mellanox devices (IB and RoCE), the monitor reads:
-1.  **Standard Counters**: `/sys/class/infiniband/<dev>/ports/1/counters/`
+1.  **Standard Counters**: `/sys/class/infiniband/{dev}/ports/1/counters/`
     *   Fatal counters: `link_downed`, `local_link_integrity_errors`, `excessive_buffer_overrun_errors`
     *   Two-tier counter: `symbol_error` — non-fatal at > 10/sec (degradation warning), fatal at > 120/hour (IBTA BER spec violation)
-2.  **Extended Counters**: `/sys/class/infiniband/<dev>/ports/1/hw_counters/`
+2.  **Extended Counters**: `/sys/class/infiniband/{dev}/ports/1/hw_counters/`
     *   Fatal counter: `rnr_nak_retry_err`
     *   Non-fatal counters for degradation monitoring
 
@@ -518,10 +518,10 @@ For Mellanox devices (IB and RoCE), the monitor reads:
 
 | Counter                           | Path                                                                                | Fatal Threshold |
 |-----------------------------------|-------------------------------------------------------------------------------------|-----------------|
-| `symbol_error_fatal`              | `/sys/class/infiniband/<dev>/ports/<port>/counters/symbol_error`                    | > 120/hour      |
-| `local_link_integrity_errors`     | `/sys/class/infiniband/<dev>/ports/<port>/counters/local_link_integrity_errors`     | Delta > 0       |
-| `excessive_buffer_overrun_errors` | `/sys/class/infiniband/<dev>/ports/<port>/counters/excessive_buffer_overrun_errors` | Delta > 0       |
-| `rnr_nak_retry_err`               | `/sys/class/infiniband/<dev>/ports/<port>/hw_counters/rnr_nak_retry_err`            | Delta > 0       |
+| `symbol_error_fatal`              | `/sys/class/infiniband/{dev}/ports/{port}/counters/symbol_error`                    | > 120/hour      |
+| `local_link_integrity_errors`     | `/sys/class/infiniband/{dev}/ports/{port}/counters/local_link_integrity_errors`     | Delta > 0       |
+| `excessive_buffer_overrun_errors` | `/sys/class/infiniband/{dev}/ports/{port}/counters/excessive_buffer_overrun_errors` | Delta > 0       |
+| `rnr_nak_retry_err`               | `/sys/class/infiniband/{dev}/ports/{port}/hw_counters/rnr_nak_retry_err`            | Delta > 0       |
 
 > **Note**: `symbol_error` has two default config entries: `symbol_error` (non-fatal, > 10/sec for degradation) and `symbol_error_fatal` (fatal, > 120/hour per [IBTA specification (10E-12 BER)](https://docs.oracle.com/cd/E19654-01/820-7751-12/z40004881932077.html)). Both read from the same sysfs file. On PAM4 links (HDR/NDR), some non-zero symbol errors are expected; tune the fatal threshold if 120/hour is too sensitive for your environment.
 
@@ -533,7 +533,7 @@ Hardware counters may reset due to driver reloads, device resets, **administrato
 
 ### 6.1 The Problem
 
-```
+```text
 Poll N:   symbol_error = 1,000,000
 Driver Reload / Counter Reset / Admin Clear
 Poll N+1: symbol_error = 50
@@ -602,7 +602,7 @@ Sysfs counters are kernel-maintained and monotonic between resets, so
 
 The following timeline illustrates why persistent breach tracking and recovery events are required:
 
-```
+```text
 Timeline: Admin Counter Reset Recovery
 
 T=0s    Poll:  link_downed = 0       (delta=0, no breach, breached=false)
@@ -741,7 +741,7 @@ type PortStateSnapshot struct {
 }
 ```
 
-**Map keys**: Counter snapshots and breach flags use the key format `<device>:<port>:<counter_name>` (e.g., `mlx5_0:1:link_downed`). Port state snapshots use `<device>_<port>` (e.g., `mlx5_0_1`). `KnownDevices` is a flat list of device names (e.g., `["mlx5_0", "mlx5_1", ...]`).
+**Map keys**: Counter snapshots and breach flags use the key format `<device>:{port}:<counter_name>` (e.g., `mlx5_0:1:link_downed`). Port state snapshots use `<device>_{port}` (e.g., `mlx5_0_1`). `KnownDevices` is a flat list of device names (e.g., `["mlx5_0", "mlx5_1", ...]`).
 
 **Save triggers**: The state file is written after each poll cycle completes (both state and counter checks). Errors during save are logged as warnings but do not halt monitoring.
 
@@ -793,8 +793,8 @@ Not all counters are available on all NIC versions or firmware revisions. The mo
 >
 > | Counter Location | Tracks | Example Traffic |
 > |------------------|--------|-----------------|
-> | `/sys/class/infiniband/<dev>/ports/<port>/counters/` | **RDMA traffic only** | ib_write_bw, distributed apps |
-> | `/sys/class/net/<iface>/statistics/` | **TCP/IP traffic only** | ping, ssh, HTTP |
+> | `/sys/class/infiniband/{dev}/ports/{port}/counters/` | **RDMA traffic only** | ib_write_bw, distributed apps |
+> | `/sys/class/net/{iface}/statistics/` | **TCP/IP traffic only** | ping, ssh, HTTP |
 >
 > **Field-validated observation**: Running `ping` through a RoCE interface does NOT increment
 > InfiniBand counters (`port_rcv_data`, `port_xmit_data` stay at 0). The ping goes through the
@@ -806,7 +806,7 @@ Not all counters are available on all NIC versions or firmware revisions. The mo
 
 ### 8.1 Counter Domain Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                    RDMA vs TCP/IP COUNTER DOMAINS                                │
 ├─────────────────────────────────────────────────────────────────────────────────┤
@@ -827,7 +827,7 @@ Not all counters are available on all NIC versions or firmware revisions. The mo
 │  ┌─────────────────────────┐           │     ┌─────────────────────────┐        │
 │  │ InfiniBand Counters     │           │     │ Ethernet Statistics     │        │
 │  │ /sys/class/infiniband/  │           │     │ /sys/class/net/         │        │
-│  │ <dev>/ports/<p>/counters│           │     │ <iface>/statistics/     │        │
+│  │ {dev}/ports/{p}/counters│           │     │ {iface}/statistics/     │        │
 │  │                         │           │     │                         │        │
 │  │ • symbol_error          │           │     │ • rx_bytes              │        │
 │  │ • port_rcv_errors       │           │     │ • tx_bytes              │        │
@@ -1101,7 +1101,7 @@ reset (`current < previous`) or the host reboots. Polls while a counter
 is already breached emit nothing; recovery events fire only on counter
 reset of a previously breached counter.
 
-```
+```text
 On startup, before the first poll cycle:
   0. Check boot ID (see Section 6.5):
      IF boot ID changed (host rebooted):
@@ -1113,7 +1113,7 @@ On startup, before the first poll cycle:
          port/device discovery state is scope-sensitive; see Section 6.5)
        - Set reboot_detected = false
 
-For each configured counter (key = <device>:<port>:<counter_name>):
+For each configured counter (key = <device>:{port}:<counter_name>):
   1. Read current_value from sysfs and capture wall-clock now.
 
   2. IF reboot_detected AND this is the first poll for the key:

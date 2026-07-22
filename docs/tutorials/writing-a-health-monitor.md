@@ -554,7 +554,7 @@ or "watching <K8s resource>"]. It is a standalone Go program that can live in an
 follow this spec exactly.
 
 - Create a new Go module in its own directory with any module path (e.g.
-  github.com/{your-org}/[my-monitor]). It depends on two NVSentinel modules that are NOT
+  github.com/{your-org}/{my-monitor}). It depends on two NVSentinel modules that are NOT
   published as tagged releases, so fetch them by commit and add one replace so commons can
   resolve data-models:
     export GOTOOLCHAIN=auto

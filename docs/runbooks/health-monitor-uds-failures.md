@@ -100,5 +100,5 @@ Both should be mounted from hostPath at `/var/run/nvsentinel`.
 
 ```bash
 # Watch health monitor logs for successful sends
-kubectl logs -n nvsentinel {GPU_MONITOR_POD} -f
+kubectl logs -n nvsentinel {HEALTH_MONITOR_POD} -f
 ```

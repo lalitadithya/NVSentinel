@@ -131,7 +131,7 @@ This monitor uses a binary severity model based on **workload impact**:
 │  LAYER 1: LINK STATE DETECTION                                             │
 │  ═══════════════════════════════                                           │
 │  • Polling interval: 1 second                                              │
-│  • Data source: /sys/class/infiniband/<dev>/ports/<port>/state, phys_state │
+│  • Data source: /sys/class/infiniband/{dev}/ports/{port}/state, phys_state │
 │  • Detects: Hard DOWN, device disappearance, uncabled port anomalies       │
 │  • Documentation: link-state-detection.md                                  │
 │                                                                            │
@@ -142,7 +142,7 @@ This monitor uses a binary severity model based on **workload impact**:
 │  • Polling interval: 1 second                                              │
 │  • Velocity thresholds gate themselves on the configured velocityUnit      │
 │    (1s / 1m / 1h), so a fast poll is safe for every counter type.          │
-│  • Data source: /sys/class/infiniband/<dev>/ports/<port>/counters/         │
+│  • Data source: /sys/class/infiniband/{dev}/ports/{port}/counters/         │
 │  • Detects: Symbol errors, link flaps, buffer overruns, transport errors   │
 │  • Documentation: link-counter-detection.md                                │
 │                                                                            │
@@ -254,7 +254,7 @@ The NIC Health Monitor emits healthy events (`IsHealthy=true`) in two scenarios 
 ### Future Work
 
 - **AWS EFA Support**: Device names matching `rdmap\d+s\d+`
-- **Plain Ethernet**: `operstate = down` detection via `/sys/class/net/<interface>/operstate`
+- **Plain Ethernet**: `operstate = down` detection via `/sys/class/net/{interface}/operstate`
 - **TCPXO Support**: TCP Express Offload support
 
 ---

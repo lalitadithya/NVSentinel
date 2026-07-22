@@ -50,6 +50,7 @@ syslog-health-monitor:
     - SysLogsXIDError
     - SysLogsSXIDError
     - SysLogsGPUFallenOff
+    - SysLogsNICDriverError
 ```
 
 ### Check Types

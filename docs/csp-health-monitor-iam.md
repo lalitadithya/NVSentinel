@@ -70,6 +70,8 @@ csp-health-monitor:
 Replace the following placeholders in the commands below:
 - `{CLUSTER_NAME}` — EKS cluster name
 - `{NAMESPACE}` — Kubernetes namespace (default: `nvsentinel`)
+- `{ACCOUNT_ID}` — AWS account ID (12-digit number); obtained from the `aws sts get-caller-identity` command in the script
+- `{AWS_REGION}` — AWS region where the EKS cluster runs (e.g. `us-east-1`)
 
 ```bash
 # 1. Create IAM policy

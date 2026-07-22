@@ -54,7 +54,7 @@ This monitor uses a binary severity model based on **workload impact**:
 
 ### 1.4 State Detection Overview Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                     LINK STATE DETECTION FLOW                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -62,11 +62,11 @@ This monitor uses a binary severity model based on **workload impact**:
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │                     DATA SOURCES (sysfs)                             │   │
 │  ├─────────────────────────────────────────────────────────────────────┤   │
-│  │  /sys/class/infiniband/<dev>/ports/<port>/                          │   │
+│  │  /sys/class/infiniband/{dev}/ports/{port}/                          │   │
 │  │  ├── state           →  Logical state (DOWN, INIT, ARMED, ACTIVE)   │   │
 │  │  └── phys_state      →  Physical state (LinkUp, Disabled, Polling)  │   │
 │  │                                                                      │   │
-│  │  /sys/class/net/<interface>/                                         │   │
+│  │  /sys/class/net/{interface}/                                         │   │
 │  │  └── operstate       →  Interface state (up, down, unknown)         │   │
 │  │                                                                      │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
@@ -132,7 +132,7 @@ The State Monitor follows NVSentinel's established architectural pattern where:
 
 ### 2.3 State Check Data Flow (1s polling interval)
 
-```
+```text
 Reads:
 ├── state          → Logical link state (DOWN, INIT, ARMED, ACTIVE)
 ├── phys_state     → Physical layer state (LinkUp, Disabled, Polling, LinkErrorRecovery)
@@ -159,7 +159,7 @@ Emits: Raw STATE_CHANGE events → Platform Connector → MongoDB
 
 ### 2.4 System Context
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                      NVSentinel NIC STATE MONITORING                           │
 ├────────────────────────────────────────────────────────────────────────────────┤
@@ -284,7 +284,7 @@ cat /sys/class/infiniband/mlx5_0/ports/1/phys_state
 
 **Port Health Evaluation Steps:**
 
-1. **Read port state** from `/sys/class/infiniband/<dev>/ports/<port>/state` and `phys_state`
+1. **Read port state** from `/sys/class/infiniband/{dev}/ports/{port}/state` and `phys_state`
 2. **Load previous port state** from persistent state file (or in-memory if available from a prior poll in this pod's lifetime)
 3. **Determine health status:**
    - If `state = ACTIVE` AND `phys_state = LinkUp` → **Healthy**
@@ -359,7 +359,7 @@ Management NICs on DGX systems are placed on CPU sockets that have **no compute 
 
 1. Read `gpus[].numa_node` from `/var/lib/nvsentinel/gpu_metadata.json` (the metadata collector parses this from the `nvidia-smi topo -m` NUMA Affinity column and publishes it per GPU).
 2. Build `gpu_numa_set` from the distinct `numa_node` values across all GPUs (ignoring -1 / unknown).
-3. For each `mlx5_*` NIC discovered in `/sys/class/infiniband/`, read `/sys/class/infiniband/<dev>/device/numa_node`.
+3. For each `mlx5_*` NIC discovered in `/sys/class/infiniband/`, read `/sys/class/infiniband/{dev}/device/numa_node`.
 4. If `nic_numa ∉ gpu_numa_set` → **exclude** (management NIC on separate socket).
 
 **Edge case — GPU**: If `gpus[].numa_node = -1` (unknown, common in VMs or single-socket systems), that GPU is excluded from the `gpu_numa_set`. If *all* GPUs have -1, the set is empty and the NIC Health Monitor **fails to start** — without GPU NUMA information the NUMA gate cannot distinguish management NICs from compute NICs, and monitoring everything would risk false `REPLACE_VM` on management NIC failures.
@@ -401,7 +401,7 @@ The mapping from NVIDIA topology levels (the `nvmlGpuTopologyLevel_t` enum, disp
 
 **Classification algorithm** (applied per NIC after discovery):
 
-```
+```text
 classify_nic(nic):
     # Step 1: Default route exclusion
     # Catches management NICs that share a NUMA node with GPUs
@@ -435,7 +435,7 @@ classify_nic(nic):
 
 1. **PIX/PXB → Compute**: The topo matrix authoritatively identifies NICs that share a PCIe switch with a GPU. This is the primary signal on SXM systems (DGX/HGX A100, H100).
 
-2. **Default route → Management**: Runs before topology classification. The classifier reads `/proc/net/route` at startup, finds the default route interface, and maps it to an IB device via `/sys/class/net/<iface>/device/infiniband/`. This prevents the management NIC from being monitored as Storage, avoiding false REPLACE_VM for control-plane network failures. If `/proc/net/route` is unavailable or the interface has no IB backing, the check is silently skipped.
+2. **Default route → Management**: Runs before topology classification. The classifier reads `/proc/net/route` at startup, finds the default route interface, and maps it to an IB device via `/sys/class/net/{iface}/device/infiniband/`. This prevents the management NIC from being monitored as Storage, avoiding false REPLACE_VM for control-plane network failures. If `/proc/net/route` is unavailable or the interface has no IB backing, the check is silently skipped.
 
 3. **InfiniBand → Compute**: On platforms where no NIC has PIX/PXB to a GPU (PCIe-only GPUs like L40S, or Grace where GPUs aren't on PCIe), the link layer distinguishes compute fabric NICs (InfiniBand) from storage/management NICs (Ethernet). This is the decisive signal on on-prem L40S and GB200.
 
@@ -546,7 +546,7 @@ NICs are grouped by **role** (Compute or Storage, from Section 4.2), then within
 
 #### 4.3.3 Algorithm
 
-```
+```text
 For all monitored PF NICs:
   Classify each NIC as Compute or Storage (Section 4.2)
   Group by physical card (PCI bus:device)
@@ -569,7 +569,7 @@ For all monitored PF NICs:
 #### 4.3.4 Field Validation
 
 **H100 OCI (compute dual-port + storage single-port):**
-```
+```text
 Compute group (8 cards): all dual-port, 2 active each → mode = 2
 Storage group (2 cards): all single-port, 1 active each → mode = 1
 → No false positives (storage NICs NOT compared against compute mode)
@@ -579,7 +579,7 @@ If storage card drops to 0 active → 0 < mode 1 → FATAL
 ```
 
 **L40 (dual-port compute NICs, 1 port cabled per card):**
-```
+```text
 Compute group (2 cards): Card A (1 active, 1 down), Card B (1 active, 1 down) → mode = 1
 → Uncabled ports NOT flagged (consistent pattern)
 
@@ -618,7 +618,7 @@ The NIC Health Monitor discovers and parses InfiniBand/RoCE devices by iterating
 
 ### 5.2 Device Discovery Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                        NIC DEVICE DISCOVERY FLOW                                 │
 ├─────────────────────────────────────────────────────────────────────────────────┤
@@ -652,7 +652,7 @@ The NIC Health Monitor discovers and parses InfiniBand/RoCE devices by iterating
 
 The monitor detects Mellanox devices using the following logic:
 1. Check if device name matches `mlx5_\d+` (Mellanox).
-2. Fallback: Check driver symlink in `/sys/class/infiniband/<dev>/device/driver` for `mlx5_core`.
+2. Fallback: Check driver symlink in `/sys/class/infiniband/{dev}/device/driver` for `mlx5_core`.
 
 | Vendor                 | Detection                              | State Monitoring  | Fatal Detection    |
 |------------------------|----------------------------------------|-------------------|--------------------|
@@ -745,7 +745,7 @@ This startup homogeneity check requires no persisted state and works immediately
 > **Note**: Clusters with the **NVIDIA Network Operator** installed will have SR-IOV enabled by default. This applies to both **VM-based** and **baremetal container** environments. In baremetal Kubernetes with SR-IOV, unassigned VFs will still appear as DOWN — the filtering logic applies equally to both deployment types.
 
 **The Problem Without Understanding SR-IOV:**
-```
+```text
 Monitor starts → Sees 34 devices → 16 are DOWN → Generates 16 FATAL alerts!
 But... those 16 devices are supposed to be DOWN. False alarm storm!
 ```
@@ -766,7 +766,7 @@ Unassigned VFs are essentially "empty slots" waiting for workloads. A DOWN VF is
 
 ### 8.3 VF Lifecycle
 
-```
+```text
 STAGE 1: System Boot (SR-IOV Enabled)
 ├── PF created: mlx5_0 → ACTIVE (host uses it)
 ├── VFs created: mlx5_18, mlx5_19, ... → DOWN (waiting for assignment)
@@ -803,7 +803,7 @@ The Linux kernel provides clear indicators in sysfs:
 | `device/physfn` symlink      | Does NOT exist              | EXISTS (points to parent PF) |
 | `device/sriov_totalvfs` file | EXISTS (shows max VF count) | Does NOT exist               |
 
-```
+```text
 # PF Example (mlx5_0):
 /sys/class/infiniband/mlx5_0/device/
 ├── sriov_totalvfs    ← EXISTS (value: 16 = can create 16 VFs)
@@ -817,7 +817,7 @@ The Linux kernel provides clear indicators in sysfs:
 
 ### 8.6 Real Example from Field Validation (34-NIC System)
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │  Device      State    Type   Alert if DOWN?   Reason                   │
 ├────────────────────────────────────────────────────────────────────────┤
@@ -854,8 +854,8 @@ RoCE (RDMA over Converged Ethernet) devices appear in **both** `/sys/class/net` 
 ### 9.1 GID Table Information (RoCE Routing Diagnostics)
 
 The GID (Global Identifier) table is critical for RoCE routing. Each device exposes GIDs at:
-- `/sys/class/infiniband/<dev>/ports/<port>/gids/<index>`
-- `/sys/class/infiniband/<dev>/ports/<port>/gid_attrs/types/<index>`
+- `/sys/class/infiniband/{dev}/ports/{port}/gids/<index>`
+- `/sys/class/infiniband/{dev}/ports/{port}/gid_attrs/types/<index>`
 
 **GID Types** ([Linux Kernel sysfs ABI](https://www.kernel.org/doc/Documentation/ABI/stable/sysfs-class-infiniband)):
 - `IB/RoCE v1` = InfiniBand and RoCE v1 (GRH-based, layer 2)
@@ -867,7 +867,7 @@ At the API level (`ibv_gid_type`), there are three distinct types:
 - `IBV_GID_TYPE_ROCE_V2` (RoCE v2)
 
 **Example GID table from 34-NIC system:**
-```
+```text
 DEV     PORT  INDEX  GID                                      IPv4           VER   DEV
 mlx5_0  1     0      fe80:0000:0000:0000:ba3f:d2ff:fec3:65c4               v1    eth0
 mlx5_0  1     1      fe80:0000:0000:0000:ba3f:d2ff:fec3:65c4               v2    eth0
@@ -883,8 +883,8 @@ mlx5_1  1     2      0000:0000:0000:0000:0000:ffff:ac10:0120  172.16.1.32  v1   
 - GID type mismatch between peers → connection failures
 
 **Helper Functions:**
-- `getGIDCount`: Enumerates `/sys/class/infiniband/<dev>/ports/<port>/gids/` to count valid GIDs.
-- `getNetDevForIBDevice`: Discovers the network interface (e.g., `eth0`, `rdma4`) associated with an IB device by reading `/sys/class/infiniband/<dev>/device/net/`. This is critical for reading Ethernet statistics on RoCE devices.
+- `getGIDCount`: Enumerates `/sys/class/infiniband/{dev}/ports/{port}/gids/` to count valid GIDs.
+- `getNetDevForIBDevice`: Discovers the network interface (e.g., `eth0`, `rdma4`) associated with an IB device by reading `/sys/class/infiniband/{dev}/device/net/`. This is critical for reading Ethernet statistics on RoCE devices.
 
 ---
 
@@ -899,7 +899,7 @@ mlx5_1  1     2      0000:0000:0000:0000:0000:ffff:ac10:0120  172.16.1.32  v1   
 ### 10.1 Future Work
 
 - **AWS EFA Support**: Device names matching `rdmap\d+s\d+`
-- **Plain Ethernet**: `operstate = down` detection via `/sys/class/net/<interface>/operstate`
+- **Plain Ethernet**: `operstate = down` detection via `/sys/class/net/{interface}/operstate`
 - **TCPXO Support**: TCP Express Offload support
 
 ---
@@ -1150,9 +1150,9 @@ Repeated non-fatal NIC degradation and selected non-fatal NIC driver syslog sign
 
 | Condition                        | Recommended Action               | Path/Source                                                                                                     |
 |----------------------------------|----------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| `state = DOWN` (runtime, or first-poll on an anomalous card) | **RecommendedAction_REPLACE_VM** | `/sys/class/infiniband/<dev>/ports/<port>/state`; first-poll severity gated by peer evidence (Section 4.3.2) |
-| `phys_state = Disabled`          | **RecommendedAction_REPLACE_VM** | `/sys/class/infiniband/<dev>/ports/<port>/phys_state`                                                           |
-| `phys_state = LinkErrorRecovery` | **RecommendedAction_NONE**       | `/sys/class/infiniband/<dev>/ports/<port>/phys_state` (non-fatal; first-poll homogeneity may emit a separate card-level fatal anomaly) |
+| `state = DOWN` (runtime, or first-poll on an anomalous card) | **RecommendedAction_REPLACE_VM** | `/sys/class/infiniband/{dev}/ports/{port}/state`; first-poll severity gated by peer evidence (Section 4.3.2) |
+| `phys_state = Disabled`          | **RecommendedAction_REPLACE_VM** | `/sys/class/infiniband/{dev}/ports/{port}/phys_state`                                                           |
+| `phys_state = LinkErrorRecovery` | **RecommendedAction_NONE**       | `/sys/class/infiniband/{dev}/ports/{port}/phys_state` (non-fatal; first-poll homogeneity may emit a separate card-level fatal anomaly) |
 | Uncabled port anomaly            | **RecommendedAction_REPLACE_VM** | Card homogeneity check (PCI card grouping + mode)                                                               |
 | Device disappeared               | **RecommendedAction_REPLACE_VM** | Device enumeration in `/sys/class/infiniband/`                                                                  |
 

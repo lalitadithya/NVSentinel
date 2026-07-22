@@ -16,7 +16,7 @@ global:
     enabled: false
 ```
 
-> **Note**: The NIC Health Monitor requires the metadata collector to be running on every GPU node and to have published `/var/lib/nvsentinel/gpu_metadata.json`. The monitor fails to start if that file is missing or does not contain GPU NUMA and NIC topology data.
+> **Note**: The NIC Health Monitor requires the metadata collector to be running on every GPU node and to have published `/var/lib/nvsentinel/gpu_metadata.json`. The monitor fails to start if that file is missing or does not contain GPU NUMA and NIC topology data. Exception: when `nicInclusionRegexOverride` is set, automatic NIC discovery and NUMA-based management exclusion are bypassed, so the metadata file is not required.
 
 ### Resources
 

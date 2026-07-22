@@ -184,7 +184,7 @@ This returns all spans where a database operation took longer than 100ms, helpin
 
 K8s API calls appear as `HTTP PUT`, `HTTP DELETE`, `HTTP GET` spans within a trace. Each HTTP span includes `url.full` (e.g., `https://10.96.0.1:443/api/v1/nodes/{node}/status`), `http.response.status_code`, and `http.request.method`, so you can identify exactly which API call was slow and to which resource. To find slow calls across all traces, use TraceQL:
 
-```
+```text
 {name =~ "HTTP.*" && duration > 500ms}
 ```
 

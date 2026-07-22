@@ -68,7 +68,9 @@ fault-quarantine:
   labelPrefix: "k8saas.nvidia.com/"
 ```
 
-Generated labels (where `{labelPrefix}` is the configured value, default `k8saas.nvidia.com/`):
+### Generated Labels
+
+Labels use the configured `{labelPrefix}` (default `k8saas.nvidia.com/`):
 - `{labelPrefix}cordon-by` — Service that cordoned the node
 - `{labelPrefix}cordon-reason` — Reason for cordoning
 - `{labelPrefix}cordon-timestamp` — Cordon timestamp (format: 2006-01-02T15-04-05Z)

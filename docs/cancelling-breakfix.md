@@ -20,7 +20,7 @@ Cancel a workflow when you need to handle a specific situation manually:
 
 ### How to Cancel
 
-Simply uncordon the node:
+Simply uncordon the node (replace `{node-name}` with the actual node name):
 
 ```bash
 kubectl uncordon {node-name}
