@@ -234,7 +234,7 @@ userNamespaces:
 On a quarantined node with workloads still scheduled:
 
 ```bash
-NODE=<cordoned-node>
+NODE={cordoned-node}
 
 kubectl get pods -A --field-selector "spec.nodeName=$NODE" -w
 kubectl get node "$NODE" -L dgxc.nvidia.com/nvsentinel-state

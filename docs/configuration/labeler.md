@@ -123,7 +123,7 @@ The CEL context exposes:
 
 - `node`: the Kubernetes Node object being reconciled.
 - `resourceSlices`: ResourceSlice objects associated with the node.
-- `sum(list<int>)`: helper that returns the sum of a list of integers.
+- `sum(list)`: helper that returns the sum of a list of integers.
 
 For classes without a matching override, the expected value is learned as the maximum current or existing expected count among nodes with the same configured grouping-label values. Learned expected counts can rise automatically, but do not fall automatically when a node reports fewer devices.
 

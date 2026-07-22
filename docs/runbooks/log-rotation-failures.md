@@ -161,7 +161,7 @@ kubectl exec -n nvsentinel $FILE_SERVER_POD -c log-cleanup -- pkill -HUP python3
 kubectl exec -n nvsentinel $FILE_SERVER_POD -- find /usr/share/nginx/html -type f -mtime +1 -delete
 
 # 2. Delete logs for specific nodes that are no longer relevant
-kubectl exec -n nvsentinel $FILE_SERVER_POD -- rm -rf /usr/share/nginx/html/<old-node-name>
+kubectl exec -n nvsentinel $FILE_SERVER_POD -- rm -rf /usr/share/nginx/html/{old-node-name}
 
 # 3. Check space recovered
 kubectl exec -n nvsentinel $FILE_SERVER_POD -- df -h /usr/share/nginx/html

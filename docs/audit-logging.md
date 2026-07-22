@@ -12,7 +12,7 @@ NVSentinel can record a **durable, file-based audit trail** of **HTTP write oper
 
 ## How It Works
 
-1. **Initialization**: Each component that supports audit logging calls `auditlogger.InitAuditLogger("<component>")` at startup. If `AUDIT_ENABLED` is not true, initialization is a no-op and no log file is created.
+1. **Initialization**: Each component that supports audit logging calls `auditlogger.InitAuditLogger("{component}")` at startup. If `AUDIT_ENABLED` is not true, initialization is a no-op and no log file is created.
 2. **HTTP wrapping**: Controllers register `auditlogger.NewAuditingRoundTripper` on their `http.RoundTripper` (typically via `rest.Config.Wrap` for client-go, or on the CSP `http.Client` transport). Only **write** methods are audited: POST, PUT, PATCH, DELETE.
 3. **Execution**: On each such request, after the response returns, a single JSON **audit entry** is appended to a rotating file (see [Log file location and format](#log-file-location-and-format)).
 
@@ -29,7 +29,7 @@ flowchart LR
   end
   HTTP -->|writes| K8S[Kubernetes API]
   HTTP -->|writes| CSP[CSP HTTP APIs]
-  RT -->|JSON lines| LOG["/var/log/nvsentinel/<pod>-audit.log"]
+  RT -->|JSON lines| LOG["/var/log/nvsentinel/{pod}-audit.log"]
 ```
 
 When Helm enables audit logging, the chart also mounts a **hostPath** volume at `/var/log/nvsentinel` (and runs an init container to set permissions) so logs persist on the node and can be collected by your log agent.
@@ -52,7 +52,7 @@ When Helm enables audit logging, the chart also mounts a **hostPath** volume at 
 ## Log file location and format
 
 - **Default directory**: `/var/log/nvsentinel` (override with `AUDIT_LOG_BASE_PATH` if you extend the chart to set it).
-- **Default file name**: `<POD_NAME>-audit.log` (if `POD_NAME` is unset, the component name is used).
+- **Default file name**: `{POD_NAME}-audit.log` (if `{POD_NAME}` is unset, the component name is used).
 - **Rotation**: [lumberjack](https://github.com/natefinch/lumberjack)-style rotation: max file size, retained backups, max age, optional gzip of rotated files — controlled by Helm values mapped to `AUDIT_LOG_*` environment variables (see [Configuration](#configuration)).
 
 Example line (pretty-printed; on disk it is a single line per request):
@@ -95,7 +95,7 @@ The umbrella chart injects the following **environment variables** into componen
 | `AUDIT_LOG_MAX_AGE_DAYS` | Max age of rotated files |
 | `AUDIT_LOG_COMPRESS` | Compress rotated files |
 | `AUDIT_LOG_BASE_PATH` | (Optional) Base directory; default in code is `/var/log/nvsentinel` |
-| `POD_NAME` | Used to build the log file name `<pod>-audit.log` |
+| `POD_NAME` | Used to build the log file name `{POD_NAME}-audit.log` |
 
 ### Tenant / platform integration
 

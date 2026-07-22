@@ -138,7 +138,7 @@ The event exporter uses OAuth 2.0 Client Credentials grant:
 
 1. Requests access token from `tokenUrl` using `clientId` and client secret
 2. Caches the token until expiration
-3. Includes token in `Authorization: Bearer <token>` header for event POSTs
+3. Includes token in `Authorization: Bearer {token}` header for event POSTs
 4. Automatically refreshes expired tokens
 
 ## Backfill Configuration
@@ -291,7 +291,7 @@ The external event sink must:
 
 1. Accept `POST` requests at the configured endpoint
 2. Accept `Content-Type: application/cloudevents+json` header
-3. Validate `Authorization: Bearer <token>` header
+3. Validate `Authorization: Bearer {token}` header
 4. Return HTTP 2xx status codes for successful ingestion
 5. Return HTTP 4xx/5xx status codes for failures
 6. Handle CloudEvents 1.0 JSON format
