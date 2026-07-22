@@ -175,7 +175,7 @@ XID 74 (NVLink error) carries register fields (`REG0`–`REG6`) that encode the 
 
 **ECC/parity errors** — REG0 bits 4 or 5 set (`XID74Reg0ECCParityErrorRule`), or REG2 bits 0, 1, 2, or 6 set (`RepeatedXID74Reg2HardwareIssueRule`). Repeated occurrences on the same NVLink and GPU indicate a hardware fault.
 
-**Unexpected or unexplained errors** — REG0 bits 1, 20, 27, or 29 set; REG3 or REG4 anomalies. These patterns are escalated immediately to `CONTACT_SUPPORT` for further investigation.
+**Unexpected or unexplained errors** — REG0 bits 1 or 20 set, or REG3 or REG4 anomalies: escalated immediately to `CONTACT_SUPPORT`. REG0 bits 27 or 29 set: escalated to `CONTACT_SUPPORT` after two or more occurrences within 24 hours (`XID74Reg0Bit27Or29SetRule`).
 
 Rules that check REG0 bits 1, 20, 21, or 22 additionally verify that no other XID errors are active on the same GPU before firing, to avoid false positives during multi-error storms.
 

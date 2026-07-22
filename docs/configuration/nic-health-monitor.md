@@ -77,7 +77,7 @@ nic-health-monitor:
 Polls `/sys/class/infiniband/*/ports/*/state` and `phys_state` every `statePollingInterval`. Emits fatal events on port DOWN, device disappearance (after 3 consecutive missed enumerations), and uncabled port anomalies (card has fewer active ports than peer cards of the same role). Auto-excludes management NICs by NUMA locality and default-route detection; auto-filters SR-IOV Virtual Functions.
 
 #### InfiniBandDegradationCheck
-Polls InfiniBand hardware counters every 1 second. Emits fatal events when counters like `link_downed`, `rnr_nak_retry_err`, or `excessive_buffer_overrun_errors` increment, and non-fatal events when rate-based thresholds are exceeded (e.g., `symbol_error > 10/sec`). Counter breach state is persisted across pod restarts.
+Polls InfiniBand hardware counters every 1 second. Emits fatal events when counters like `link_downed`, `rnr_nak_retry_err`, or `excessive_buffer_overrun_errors` increment. Rate-based threshold breaches emit events at the severity configured for each counter — `symbol_error > 10/sec` is non-fatal, `symbol_error_fatal > 120/hour` is fatal. Counter breach state is persisted across pod restarts.
 
 #### EthernetStateCheck
 Same as `InfiniBandStateCheck` but for Ethernet/RoCE devices (reads `link_layer = Ethernet`). Monitors `operstate` in addition to `state` and `phys_state`.

@@ -46,7 +46,7 @@ Polls InfiniBand hardware counters every second for error rate violations:
 - `roce_slow_restart` > 10/sec — grey failure straggler indicator
 - `carrier_changes`, `port_rcv_errors`, and others
 
-Counter breach state is persisted across pod restarts. Recovery events are emitted automatically when an admin resets counters (`perfquery -x`) or when the node reboots.
+Counter breach state is persisted across pod restarts. Recovery events are emitted automatically when an admin resets counters (e.g. `perfquery -r` or `perfquery -R`) or when the node reboots.
 
 ### Layer 3: Syslog Detection (Syslog Health Monitor DaemonSet)
 
