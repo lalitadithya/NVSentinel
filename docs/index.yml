@@ -92,6 +92,8 @@ navigation:
         path: configuration/syslog-health-monitor.md
       - page: CSP Health Monitor
         path: configuration/csp-health-monitor.md
+      - page: NIC Health Monitor
+        path: configuration/nic-health-monitor.md
       - page: Kubernetes Object Monitor
         path: configuration/kubernetes-object-monitor.md
       - page: Fault Quarantine

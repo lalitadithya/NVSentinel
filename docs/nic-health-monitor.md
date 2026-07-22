@@ -121,7 +121,7 @@ syslog-health-monitor:
 
 The NIC Health Monitor DaemonSet requires the metadata collector to be running on the same node (provides GPU↔NIC topology for management NIC exclusion and role classification). The monitor fails to start if the metadata file is missing.
 
-For counter threshold customization, NIC exclusion patterns, and advanced configuration, see [NIC Health Monitor Configuration](./configuration/).
+For counter threshold customization, NIC exclusion patterns, and advanced configuration, see [NIC Health Monitor Configuration](./configuration/nic-health-monitor.md).
 
 ## Key Features
 
