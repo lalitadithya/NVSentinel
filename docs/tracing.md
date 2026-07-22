@@ -189,6 +189,7 @@ K8s API calls appear as `HTTP PUT`, `HTTP DELETE`, `HTTP GET` spans within a tra
 ```
 
 This returns all spans where an HTTP call took longer than 500ms, helping you identify slow API calls across all modules.
+
 ## Troubleshooting
 
 **Q: Tracing is enabled but I don't see any traces in my backend**

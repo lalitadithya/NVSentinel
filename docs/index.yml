@@ -92,6 +92,8 @@ navigation:
 
   - section: Configuration
     contents:
+      - page: Configuration Overview
+        path: configuration/README.md
       - page: GPU Health Monitor
         path: configuration/gpu-health-monitor.md
       - page: Syslog Health Monitor
@@ -151,5 +153,7 @@ navigation:
         path: runbooks/node-condition-update-failures.md
       - page: Node Event Creation Failures
         path: runbooks/node-event-creation-failures.md
+      - page: GPU Thermal Margin
+        path: runbooks/gpu-thermal-margin.md
       - page: Stale Events
         path: runbooks/stale-events.md

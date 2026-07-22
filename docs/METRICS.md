@@ -36,6 +36,7 @@ This document outlines all Prometheus metrics exposed by NVSentinel components.
 | `fault_quarantine_nodes_quarantined_total` | Counter | `node` | Total number of nodes quarantined |
 | `fault_quarantine_nodes_unquarantined_total` | Counter | `node` | Total number of nodes unquarantined |
 | `fault_quarantine_nodes_manually_uncordoned_total` | Counter | `node` | Total number of manually uncordons for nodes |
+| `fault_quarantine_nodes_manually_untainted_total` | Counter | `node` | Total number of manual taint removals for nodes |
 | `fault_quarantine_current_quarantined_nodes` | Gauge | `node` | Current number of quarantined nodes |
 
 ### Taint and Cordon Metrics
@@ -47,8 +48,8 @@ This document outlines all Prometheus metrics exposed by NVSentinel components.
 | `fault_quarantine_cordons_applied_total` | Counter | - | Total number of cordons applied to nodes |
 | `fault_quarantine_cordons_removed_total` | Counter | - | Total number of cordons removed from nodes |
 | `fault_quarantine_node_quarantine_duration_seconds` | Histogram | - | Time from health event generation to node quarantine completion. Buckets: Prometheus DefBuckets |
-| `fault_quarantine_node_remediation_duration_seconds` | Histogram | - | End-to-end node remediation time: `generatedTimestamp` (from original unhealthy event) to node unquarantine. Emitted on both auto unquarantine (via healthy event) and manual uncordon. Buckets: ExponentialBuckets(start=10s, factor=1.5, count=27), max ~4.4 days |
-| `fault_quarantine_node_remediation_duration_excluding_drain_seconds` | Histogram | - | Remediation time excluding node-drainer duration: `(unquarantineTime - generatedTimestamp) - (drainFinishTimestamp - quarantineFinishTimestamp)`. Emitted only when both `quarantineFinishTimestamp` and `drainFinishTimestamp` are present in the original event document. Buckets: ExponentialBuckets(start=10s, factor=1.5, count=19), max ~4.1 hours |
+| `fault_quarantine_node_remediation_duration_seconds` | Histogram | `recommended_action` | End-to-end node remediation time: `generatedTimestamp` (from original unhealthy event) to node unquarantine. Emitted on both auto unquarantine (via healthy event) and manual uncordon. Buckets: ExponentialBuckets(start=10s, factor=1.5, count=27), max ~4.4 days |
+| `fault_quarantine_node_remediation_duration_excluding_drain_seconds` | Histogram | `recommended_action` | Remediation time excluding node-drainer duration: `(unquarantineTime - generatedTimestamp) - (drainFinishTimestamp - quarantineFinishTimestamp)`. Emitted only when both `quarantineFinishTimestamp` and `drainFinishTimestamp` are present in the original event document. Buckets: ExponentialBuckets(start=10s, factor=1.5, count=19), max ~4.1 hours |
 
 ### Ruleset Evaluation Metrics
 
@@ -195,7 +196,7 @@ These metrics track GPU health events detected via DCGM (Data Center GPU Manager
 | `dcgm_health_events_publish_time_to_grpc_channel` | Histogram | `operation_name`                   | Amount of time spent in publishing DCGM health events on the gRPC channel                                 |
 | `health_events_insertion_to_uds_succeed`          | Counter   | -                                  | Total number of successful insertions of health events to UDS                                             |
 | `health_events_insertion_to_uds_error`            | Counter   | -                                  | Total number of failed insertions of health events to UDS                                                 |
-| `dcgm_health_active_events`                       | Gauge     | `event_type`, `gpu_id`, `severity` | Total number of active health events at any given time by severity. Severity values: `fatal`, `non_fatal` |
+| `dcgm_health_active_events`                       | Gauge     | `event_type`, `gpu_id` | Total number of active health events at any given time |
 | `dcgm_api_latency`                                | Histogram | `operation_name`                   | Amount of time spent calling DCGM APIs                                                                    |
 | `dcgm_reconcile_time`                             | Histogram | -                                  | Amount of time spent running a single DCGM reconcile loop                                                 |
 | `number_of_health_watches`                        | Gauge     | -                                  | Number of DCGM health watches available                                                                   |

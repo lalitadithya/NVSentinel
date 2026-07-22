@@ -6,7 +6,7 @@ NVSentinel can record a **durable, file-based audit trail** of **HTTP write oper
 
 ### Why Do You Need This?
 
-- **Forensics and accountability**: When investigating who cordoned a node, what actions Nvsentinel has taken, a dedicated audit file avoids hunting through high-volume application logs.
+- **Forensics and accountability**: When investigating who cordoned a node, what actions NVSentinel has taken, a dedicated audit file avoids hunting through high-volume application logs.
 - **Separation from debug logs**: Audit entries are **structured JSON** (one object per line) at a known path, independent of `slog` verbosity or log pipeline drops.
 - **CSP and Kubernetes coverage**: Audit logs is also logging CSP API calls for janitor and janitor provider actions.
 
@@ -103,7 +103,7 @@ DGX Cloud and similar platforms often surface NVSentinel settings through a **cl
 
 ## Security considerations
 
-- **Request bodies** can contain very long texts which include much more detailed informations. Keep `logRequestBody: false` unless a compliance requirement explicitly needs bodies.
+- **Request bodies** can contain very long texts which include much more detailed information. Keep `logRequestBody: false` unless a compliance requirement explicitly needs bodies.
 - **Host path** storage means **any process with host access** to that directory could read logs; use node-level permissions and your organization’s log-shipping and retention policies.
 
 ## Operations

@@ -24,11 +24,11 @@ Defines CPU and memory resource requests and limits for the node-drainer pod.
 node-drainer:
   resources:
     limits:
-      cpu: "2"
-      memory: "2Gi"
+      cpu: "200m"
+      memory: "300Mi"
     requests:
-      cpu: "1"
-      memory: "1Gi"
+      cpu: "200m"
+      memory: "300Mi"
 ```
 
 ### Logging
@@ -86,7 +86,7 @@ Regular expression pattern matching system namespaces that are skipped during no
 
 ```yaml
 node-drainer:
-  systemNamespaces: "^(nvsentinel|kube-system|gpu-operator|gmp-system|network-operator)$"
+  systemNamespaces: "^(nvsentinel|kube-system|gpu-operator|gmp-system|network-operator|skyhook)$"
 ```
 
 Pods in namespaces matching this regex are not evicted during drain operations.
