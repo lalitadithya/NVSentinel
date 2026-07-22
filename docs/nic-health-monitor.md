@@ -21,7 +21,7 @@ The NIC Health Monitor uses a **three-layer detection approach**, running as two
 
 ### Layer 1: Link State Detection (NIC Health Monitor DaemonSet)
 
-Polls `/sys/class/infiniband/` sysfs files every second for hard UP/DOWN transitions:
+Polls `/sys/class/infiniband/` sysfs files at `statePollingInterval` (1s by default) for hard UP/DOWN transitions:
 
 - Port goes `DOWN` or `phys_state=Disabled` → **Fatal** (`REPLACE_VM`)
 - NIC disappears from sysfs (fell off PCIe bus), confirmed across 3 consecutive polls → **Fatal** (`REPLACE_VM`)
@@ -38,7 +38,7 @@ Polls InfiniBand hardware counters every second for error rate violations:
 - `excessive_buffer_overrun_errors` — lossless fabric contract violated
 - `local_link_integrity_errors` — physical errors exceed hardware cap
 - `rnr_nak_retry_err` — connection severed by retry exhaustion
-- `symbol_error` > 120/hour — IBTA BER spec violation (10E-12 threshold)
+- `symbol_error_fatal` > 120/hour — IBTA BER spec violation (10E-12 threshold)
 
 **Non-fatal degradation** (monitored; 3 events in 1 hour escalates to `CONTACT_SUPPORT`):
 - `symbol_error` > 10/sec — dirty fiber / PHY degradation
@@ -119,7 +119,7 @@ syslog-health-monitor:
     - SysLogsNICDriverError  # NIC driver/firmware error patterns
 ```
 
-The NIC Health Monitor DaemonSet requires the metadata collector to be running on the same node (provides GPU↔NIC topology for management NIC exclusion and role classification). The monitor fails to start if the metadata file is missing.
+The NIC Health Monitor DaemonSet requires the metadata collector to be running on the same node (provides GPU↔NIC topology for management NIC exclusion and role classification). The monitor fails to start if the metadata file is missing — except when `nicInclusionRegexOverride` is set, which bypasses automatic discovery and the metadata dependency entirely.
 
 For counter threshold customization, NIC exclusion patterns, and advanced configuration, see [NIC Health Monitor Configuration](./configuration/nic-health-monitor.md).
 

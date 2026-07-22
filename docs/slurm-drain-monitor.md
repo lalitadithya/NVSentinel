@@ -22,8 +22,8 @@ The Slurm Drain Monitor runs as a Deployment (controller) in the cluster:
 1. **Watches slurmd pods** matching a configurable label selector (default: `app.kubernetes.io/name=slurmd`) in a configurable namespace (default: `slurm`)
 2. **Extracts the drain reason** from pod labels set by the Slurm health check scripts when a node is drained
 3. **Splits compound reasons** using a configurable delimiter, then evaluates each segment in order
-4. **Matches against patterns** — each pattern is a regex mapped to a `checkName`, `componentClass`, `isFatal` flag, `message`, and `recommendedAction`
-5. **Emits a health event** for the first matching pattern; the event enters the standard NVSentinel pipeline and is subject to Fault Quarantine, Node Drainer, and Fault Remediation processing
+4. **Matches against patterns** — each pattern is a regex mapped to a `checkName`, `componentClass`, `isFatal` flag, `message`, and `recommendedAction`; all patterns are evaluated independently
+5. **Emits a health event for every matching pattern**; each event enters the standard NVSentinel pipeline and is subject to Fault Quarantine, Node Drainer, and Fault Remediation processing
 6. **Applies the configured processing strategy** — `EXECUTE_REMEDIATION` for live operation or `STORE_ONLY` for shadow-mode observation
 
 If no pattern matches the drain reason, no event is emitted and the pod is ignored.
@@ -52,12 +52,9 @@ global:
 slurm-drain-monitor:
   processingStrategy: EXECUTE_REMEDIATION  # or STORE_ONLY for shadow mode
 
-  podSelector:
-    namespace: slurm
-    labelSelector: "app.kubernetes.io/name=slurmd"
-
-  drainReason:
-    delimiter: ","  # Split compound drain reasons on this character
+  namespace: slurm
+  labelSelector: "app.kubernetes.io/name=slurmd,app.kubernetes.io/component=worker"
+  reasonDelimiter: "; "  # Split compound drain reasons on this delimiter
 
   patterns:
     - regex: "\\[HC\\]"
@@ -74,7 +71,7 @@ slurm-drain-monitor:
       recommendedAction: REPLACE_VM
 ```
 
-Patterns are evaluated in order; the first match wins. Unmatched drain reasons are silently skipped.
+All patterns are evaluated independently against each drain reason segment; every matching pattern emits a separate health event. Unmatched drain reasons are silently skipped.
 
 ## Key Features
 

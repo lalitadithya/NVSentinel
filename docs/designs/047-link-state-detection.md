@@ -1151,7 +1151,7 @@ Repeated non-fatal NIC degradation and selected non-fatal NIC driver syslog sign
 | Condition                        | Recommended Action               | Path/Source                                                                                                     |
 |----------------------------------|----------------------------------|-----------------------------------------------------------------------------------------------------------------|
 | `state = DOWN` (runtime, or first-poll on an anomalous card) | **RecommendedAction_REPLACE_VM** | `/sys/class/infiniband/{dev}/ports/{port}/state`; first-poll severity gated by peer evidence (Section 4.3.2) |
-| `phys_state = Disabled`          | **RecommendedAction_REPLACE_VM** | `/sys/class/infiniband/{dev}/ports/{port}/phys_state`                                                           |
+| `phys_state = Disabled` (runtime transition, or first-poll on an anomalous card) | **RecommendedAction_REPLACE_VM** | `/sys/class/infiniband/{dev}/ports/{port}/phys_state`; first-poll Disabled without peer evidence is suppressed (Section 4.3.2) |
 | `phys_state = LinkErrorRecovery` | **RecommendedAction_NONE**       | `/sys/class/infiniband/{dev}/ports/{port}/phys_state` (non-fatal; first-poll homogeneity may emit a separate card-level fatal anomaly) |
 | Uncabled port anomaly            | **RecommendedAction_REPLACE_VM** | Card homogeneity check (PCI card grouping + mode)                                                               |
 | Device disappeared               | **RecommendedAction_REPLACE_VM** | Device enumeration in `/sys/class/infiniband/`                                                                  |

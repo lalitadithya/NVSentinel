@@ -100,7 +100,7 @@ Delimiter used to split compound drain reasons when a pod label contains multipl
 
 ## Pattern Matching
 
-Each pattern maps a drain-reason regex to a NVSentinel health event. Multiple patterns can be defined to classify different failure categories.
+Each pattern maps a drain-reason regex to an NVSentinel health event. Multiple patterns can be defined to classify different failure categories.
 
 ```yaml
 slurm-drain-monitor:

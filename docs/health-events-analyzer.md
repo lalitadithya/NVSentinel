@@ -60,18 +60,13 @@ global:
 health-events-analyzer:
   processingStrategy: EXECUTE_REMEDIATION  # or STORE_ONLY for shadow mode
 
-  rules:
-    xid74HardwareFailure:
-      enabled: true
-    xid74ContactSupport:
-      enabled: true
-    multipleRemediations:
-      enabled: true
-      windowDays: 7
-    repeatedNICDegradation:
-      enabled: true
-    repeatedNICDriverError:
-      enabled: true
+  # Individual rule flags — all enabled by default
+  enableMultipleRemediationsRule: true
+  enableRepeatedXID74Reg0HardwareIssueRule: true
+  enableXID74Reg0ECCParityErrorRule: true
+  enableXID74Reg0SignalIntegrityErrorRule: true
+  enableRepeatedNICDegradationRule: true
+  enableRepeatedNICDriverErrorRule: true
 ```
 
 Most operators use the default aggregation pipeline stages and only toggle individual rules on or off. Custom aggregation stages can be supplied in the Helm `config:` block as TOML-encoded MongoDB pipeline documents.

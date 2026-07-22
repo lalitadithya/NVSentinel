@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Janitor is NVSentinel's remediation executor. It watches for Custom Resources (RebootNode, TerminateNode, GPUReset) created by the Fault Remediation module and executes the corresponding cloud or hardware operation through the Janitor Provider — a separate deployment that holds cloud credentials and performs the actual API calls over an mTLS-secured gRPC connection.
+The Janitor is NVSentinel's remediation executor. It watches for Custom Resources (RebootNode, TerminateNode, GPUReset) created by the Fault Remediation module and executes the corresponding cloud or hardware operation through the Janitor Provider — a separate deployment that holds cloud credentials and performs the actual API calls over a TLS-secured gRPC connection authenticated with the configured CA bundle and a projected ServiceAccount token.
 
 Think of it as a maintenance crew dispatcher — when Fault Remediation posts a work order (the CR), the Janitor picks it up, coordinates with the crew (the Janitor Provider), and sees the job through until the node is back and healthy.
 
@@ -21,7 +21,7 @@ The Janitor watches the cluster for maintenance CRs and drives each one to compl
 
 1. Detects a new RebootNode, TerminateNode, or GPUReset CR created by the Fault Remediation module
 2. Pauses dependent services (e.g. the GPU Operator DaemonSet) if the operation requires it
-3. Calls the Janitor Provider over mTLS-secured gRPC, passing a projected service account token for authentication
+3. Calls the Janitor Provider over TLS-secured gRPC, authenticating with the configured CA bundle and a projected ServiceAccount token
 4. The Janitor Provider uses its scoped cloud credentials to issue the appropriate cloud or hardware API call
 5. Waits for the target node to return to a Ready state
 6. Resumes any paused services
