@@ -25,8 +25,8 @@
 - [Appendix A: Quick Reference - Counter Thresholds](#appendix-a-quick-reference---counter-thresholds)
 
 **Related Documents:**
-- [Link State Detection](./link-state-detection.md) - UP/DOWN state monitoring
-- [Syslog Detection & Correlation](./syslog-detection-correlation.md) - Kernel log monitoring and repeat failure detection
+- [Link State Detection](./047-link-state-detection.md) - UP/DOWN state monitoring
+- [Syslog Detection & Correlation](./048-syslog-detection-correlation.md) - Kernel log monitoring and repeat failure detection
 
 ---
 
@@ -1274,7 +1274,7 @@ The monitor validates configuration at startup:
 
 ### Driver/Firmware Logs
 
-For kernel log pattern details (fatal and non-fatal classifications, regex patterns, and kernel source references), see [Syslog Detection & Correlation](./syslog-detection-correlation.md).
+For kernel log pattern details (fatal and non-fatal classifications, regex patterns, and kernel source references), see [Syslog Detection & Correlation](./048-syslog-detection-correlation.md).
 
 ### Non-Fatal Counters (Default: IsFatal = false)
 

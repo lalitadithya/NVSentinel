@@ -20,8 +20,8 @@
 - [Appendix A: Quick Reference - Fatal Condition Classification](#appendix-a-quick-reference---fatal-condition-classification)
 
 **Related Documents:**
-- [Link Counter Detection](./link-counter-detection.md) - Counter-based degradation monitoring
-- [Syslog Detection & Correlation](./syslog-detection-correlation.md) - Kernel log monitoring and repeat failure detection
+- [Link Counter Detection](./046-link-counter-detection.md) - Counter-based degradation monitoring
+- [Syslog Detection & Correlation](./048-syslog-detection-correlation.md) - Kernel log monitoring and repeat failure detection
 
 ---
 
@@ -128,7 +128,7 @@ The State Monitor follows NVSentinel's established architectural pattern where:
 | **NIC Health Monitor (State Check)** | Poll sysfs state files, detect transitions and confirmed disappearance, persist lifecycle state, emit raw events and recovery events | Aggregation, deduplication, correlation, pattern detection |
 | **Health Events Analyzer**           | Correlate events, detect link flap patterns, escalate severity                                                                              | Direct hardware access                                     |
 
-> **Local State Persistence**: The State Check persists port snapshots, known devices, disappearance debounce counters, and outstanding card/device FATAL latches in the shared hostPath-backed state file (see [Link Counter Detection, Section 6.6](./link-counter-detection.md#66-persistent-state-file)). This enables recovery after pod restart, debounced disappearance detection across restarts, and a matching healthy event when a disappeared device re-enumerates. On host reboot, observational snapshots reset and healthy baselines clear stale port conditions; outstanding card/device latches remain until positive recovery evidence arrives.
+> **Local State Persistence**: The State Check persists port snapshots, known devices, disappearance debounce counters, and outstanding card/device FATAL latches in the shared hostPath-backed state file (see [Link Counter Detection, Section 6.6](./046-link-counter-detection.md#66-persistent-state-file)). This enables recovery after pod restart, debounced disappearance detection across restarts, and a matching healthy event when a disappeared device re-enumerates. On host reboot, observational snapshots reset and healthy baselines clear stale port conditions; outstanding card/device latches remain until positive recovery evidence arrives.
 
 ### 2.3 State Check Data Flow (1s polling interval)
 
@@ -256,7 +256,7 @@ const (
 
 **Physical State Substates**: `Sleep (1)`, `Polling (2)`, `Disabled (3)`, `Training (4)`, `LinkUp (5)`, `LinkErrorRecovery (6)`
 
-- **Polling (2)**: Transient state during link training. Every port passes through Polling when establishing a connection. Classified as **Non-Fatal** (`IsFatal=false`). A port that remains in Polling does not count as active, so **on the first poll** its card falls below the role group's decisive mode and is flagged Fatal by the homogeneity check (Section 4.3); a runtime transition into Polling remains non-fatal. Sustained link instability is additionally covered by the `link_downed` and `link_error_recovery` counter checks (see [Link Counter Detection](./link-counter-detection.md)).
+- **Polling (2)**: Transient state during link training. Every port passes through Polling when establishing a connection. Classified as **Non-Fatal** (`IsFatal=false`). A port that remains in Polling does not count as active, so **on the first poll** its card falls below the role group's decisive mode and is flagged Fatal by the homogeneity check (Section 4.3); a runtime transition into Polling remains non-fatal. Sustained link instability is additionally covered by the `link_downed` and `link_error_recovery` counter checks (see [Link Counter Detection](./046-link-counter-detection.md)).
 - **LinkErrorRecovery (6)**: Active error recovery in progress. Classified as **Non-Fatal** (`IsFatal=false`) because the HCA firmware is actively retrying. If recovery fails before the monitor's first poll, the card homogeneity check (Section 4.3) escalates to Fatal by detecting fewer active ports than its role peers; at runtime the transition remains non-fatal and degradation is tracked by the counter checks.
 
 ### 3.3 Diagnostic Commands
@@ -292,7 +292,7 @@ cat /sys/class/infiniband/mlx5_0/ports/1/phys_state
 
 4. **Emit event on a health boundary crossing or fatal severity escalation:**
    - **First poll after host reboot (boot ID changed — state cleared)**:
-     - Observational state has been discarded; outstanding card/device FATAL latches remain pending (see [Link Counter Detection, Section 6.5](./link-counter-detection.md#65-boot-id-handling))
+     - Observational state has been discarded; outstanding card/device FATAL latches remain pending (see [Link Counter Detection, Section 6.5](./046-link-counter-detection.md#65-boot-id-handling))
      - Healthy ports (`ACTIVE/LinkUp`): Emit **healthy event** (`IsHealthy=true`) — this clears any stale FATAL conditions on the platform from the previous boot (the node may have had NICs replaced, cables reseated, etc.)
      - Unhealthy ports on **anomalous cards** (active-port count below the role group's decisive mode, group of ≥2 cards — see Section 4.3): Emit **fatal event** — peer comparison provides positive evidence the port is supposed to be up
      - Unhealthy ports on **all other cards** — cards at/above their role mode, **singleton role groups**, and groups with a **tied or zero mode**: Log and **suppress** the event. A port that has never been observed healthy carries no evidence it should be up: an uncabled second port or an intentionally-disabled/unprovisioned port (e.g., the unused Aux frontend port on OCI `BM.GPU.H100.8`, left as a singleton after its Prime twin is excluded as the default-route NIC) is numerically indistinguishable from a failure. Without peer evidence the monitor keeps the state local and does not publish an external `HealthEvent`
@@ -598,7 +598,7 @@ The previous design included a speed degradation check that compared the sysfs `
 
 1. **Required per-GPU-type static configuration** (`gpu_port_config`) that doesn't exist for non-DGX systems (L40, T4, cloud VMs, OEM servers)
 2. **Cannot distinguish compute from storage NICs**: On H100 DGX, compute NICs run at 400 Gb/s (InfiniBand) while storage NICs may run at different speeds (Ethernet). Applying the same rate threshold to both causes false positives
-3. **Counter checks already detect the underlying degradation**: When a cable degrades enough to cause speed fallback, the physical layer generates errors. The `symbol_error` and `link_error_recovery` counters (see [Link Counter Detection](./link-counter-detection.md)) detect this degradation before or during the retrain event
+3. **Counter checks already detect the underlying degradation**: When a cable degrades enough to cause speed fallback, the physical layer generates errors. The `symbol_error` and `link_error_recovery` counters (see [Link Counter Detection](./046-link-counter-detection.md)) detect this degradation before or during the retrain event
 4. **Sysfs does not expose the expected/supported speed**: The `rate` file only shows the current negotiated speed, not the maximum supported speed of the NIC or cable
 
 > **Note**: Speed degradation remains a real failure mode in GPU clusters. A 400G link dropping to 200G halves collective operation throughput. However, this is better addressed by counter-based degradation monitoring (Layer 2) which detects the physical signal degradation that causes the speed fallback, rather than by comparing the negotiated speed against a static configuration value.
@@ -681,7 +681,7 @@ The Health Events Analyzer escalates only repeated non-fatal NIC signals:
 - `RepeatedNICDegradation`: 3 non-fatal `InfiniBandDegradationCheck` or `EthernetDegradationCheck` events on the same `NIC` + `NICPort` within 1 hour.
 - `RepeatedNICDriverError`: 3 selected non-fatal `SysLogsNICDriverError` events of the same pattern on the same node within 1 hour.
 
-Both analyzer rules use `CONTACT_SUPPORT`. See [Syslog Detection & Correlation, Appendix B](./syslog-detection-correlation.md#appendix-b-health-events-analyzer-rules-for-nic-monitoring) for exact rule definitions and external source citations.
+Both analyzer rules use `CONTACT_SUPPORT`. See [Syslog Detection & Correlation, Appendix B](./048-syslog-detection-correlation.md#appendix-b-health-events-analyzer-rules-for-nic-monitoring) for exact rule definitions and external source citations.
 
 ---
 
@@ -697,7 +697,7 @@ Device disappearance is detected through three complementary mechanisms:
 
 **Case 1: Runtime disappearance (monitor has in-memory or persisted state, same boot)**
 
-The monitor tracks devices across polling cycles via an in-memory device set and persisted lifecycle state (see [Link Counter Detection, Section 6.6](./link-counter-detection.md#66-persistent-state-file)). A previously-seen device must be absent from **three consecutive complete enumerations** before the monitor emits a FATAL event with the exact device name. The first two misses retain the last-known port/device snapshots. If the device directory is still enumerated but its contents cannot be read, the observation is treated as unknown and retained indefinitely rather than misreported as disappearance. If the top-level sysfs tree is temporarily unavailable, the poll does not advance state.
+The monitor tracks devices across polling cycles via an in-memory device set and persisted lifecycle state (see [Link Counter Detection, Section 6.6](./046-link-counter-detection.md#66-persistent-state-file)). A previously-seen device must be absent from **three consecutive complete enumerations** before the monitor emits a FATAL event with the exact device name. The first two misses retain the last-known port/device snapshots. If the device directory is still enumerated but its contents cannot be read, the observation is treated as unknown and retained indefinitely rather than misreported as disappearance. If the top-level sysfs tree is temporarily unavailable, the poll does not advance state.
 
 This works both during normal operation and **after pod restart on the same boot** because the known state and partial miss count are persisted. Once the FATAL is emitted, a separate persisted disappearance latch survives restarts and reboots. A healthy port observed after the device re-enumerates clears that latch and emits **two** recoveries: the port-scoped healthy (clears any port-level conditions) and a **device-scoped healthy whose entity set mirrors the disappearance FATAL's** (NIC entity only) — consumers that require every entity of a healthy event to match a stored condition entry (platform-connector node conditions) could not clear the device entry from the port-scoped healthy alone.
 
@@ -1140,7 +1140,7 @@ The key question: **"Will the workload fail because of this?"**
 
 ### Driver/Firmware Logs
 
-For kernel log pattern details (fatal and non-fatal classifications, regex patterns, log line examples, and kernel source references), see [Syslog Detection & Correlation](./syslog-detection-correlation.md). This document focuses on link state detection; syslog monitoring is covered in its own dedicated document to keep each document focused on a single problem.
+For kernel log pattern details (fatal and non-fatal classifications, regex patterns, log line examples, and kernel source references), see [Syslog Detection & Correlation](./048-syslog-detection-correlation.md). This document focuses on link state detection; syslog monitoring is covered in its own dedicated document to keep each document focused on a single problem.
 
 ### Repeated Non-Fatal Analyzer Escalation
 

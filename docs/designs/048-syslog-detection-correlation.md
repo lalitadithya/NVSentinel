@@ -19,8 +19,8 @@
 - [Appendix B: Health Events Analyzer Rules for NIC Monitoring](#appendix-b-health-events-analyzer-rules-for-nic-monitoring)
 
 **Related Documents:**
-- [Link State Detection](./link-state-detection.md) - UP/DOWN state monitoring
-- [Link Counter Detection](./link-counter-detection.md) - Counter-based degradation monitoring
+- [Link State Detection](./047-link-state-detection.md) - UP/DOWN state monitoring
+- [Link Counter Detection](./046-link-counter-detection.md) - Counter-based degradation monitoring
 
 ---
 
@@ -36,7 +36,7 @@ This document covers the **Syslog Health Monitor** component for NIC driver erro
 
 - **Driver/Firmware communication failures** - command timeouts (`timeout. Will cause a leak of a command resource`), firmware hangs
 - **Hardware health check failures** - `health poll failed`, unrecoverable errors
-- **Driver/firmware-level PCIe events** - surfaced via `mlx5_core` (e.g., insufficient power); fatal PCIe link loss / device disappearance is covered by [link-state-detection](./link-state-detection.md)
+- **Driver/firmware-level PCIe events** - surfaced via `mlx5_core` (e.g., insufficient power); fatal PCIe link loss / device disappearance is covered by [link-state-detection](./047-link-state-detection.md)
 - **Thermal and power issues** - High temperature warnings, insufficient power
 - **Network watchdog timeouts** - TX queue stalls (Non-Fatal diagnostic context; auto-recovery via `mlx5e_tx_timeout`)
 
