@@ -62,6 +62,10 @@ navigation:
         path: fault-quarantine.md
       - page: Fault Remediation
         path: fault-remediation.md
+      - page: Health Events Analyzer
+        path: health-events-analyzer.md
+      - page: Janitor
+        path: janitor.md
       - page: Circuit Breaker
         path: circuit-breaker.md
       - page: Cancelling Breakfix
@@ -72,6 +76,8 @@ navigation:
         path: monitoring-critical-operators.md
       - page: PostgreSQL Provider
         path: postgresql-provider.md
+      - page: Slurm Drain Monitor
+        path: slurm-drain-monitor.md
 
   - section: Observability
     contents:
@@ -102,8 +108,16 @@ navigation:
         path: configuration/node-drainer.md
       - page: Fault Remediation
         path: configuration/fault-remediation.md
+      - page: Health Events Analyzer
+        path: configuration/health-events-analyzer.md
+      - page: Janitor
+        path: configuration/janitor.md
+      - page: Janitor Provider
+        path: configuration/janitor-provider.md
       - page: Event Exporter
         path: configuration/event-exporter.md
+      - page: In-Cluster File Server
+        path: configuration/incluster-file-server.md
       - page: Metadata Collector
         path: configuration/metadata-collector.md
       - page: Labeler
@@ -112,6 +126,8 @@ navigation:
         path: configuration/platform-connectors.md
       - page: Preflight
         path: configuration/preflight.md
+      - page: Slurm Drain Monitor
+        path: configuration/slurm-drain-monitor.md
       - page: MongoDB Store
         path: configuration/mongodb-store.md
       - page: PostgreSQL Store
