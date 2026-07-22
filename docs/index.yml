@@ -40,6 +40,8 @@ navigation:
         path: syslog-health-monitor.md
       - page: CSP Health Monitor IAM
         path: csp-health-monitor-iam.md
+      - page: NIC Health Monitor
+        path: nic-health-monitor.md
       - page: Kubernetes Object Monitor
         path: kubernetes-object-monitor.md
       - page: Event Exporter
