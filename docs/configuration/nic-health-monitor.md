@@ -187,18 +187,19 @@ nic-health-monitor:
         thresholdType: delta
         threshold: 0
 
+      # Fatal PHY threshold
+      - name: symbol_error_fatal             # IBTA BER spec violation (> 120/hour = fatal)
+        enabled: true
+        thresholdType: velocity
+        threshold: 120.0
+        velocityUnit: hour
+
       # PHY degradation — non-fatal
       - name: symbol_error                   # PHY bit errors (> 10/sec = degradation)
         enabled: true
         thresholdType: velocity
         threshold: 10.0
         velocityUnit: second
-
-      - name: symbol_error_fatal             # IBTA BER spec violation (> 120/hour = fatal)
-        enabled: true
-        thresholdType: velocity
-        threshold: 120.0
-        velocityUnit: hour
 
       - name: link_error_recovery            # Link retraining / micro-flapping
         enabled: true
@@ -308,7 +309,7 @@ syslog-health-monitor:
 
 ### NIC Driver Pattern Configuration
 
-Pattern regexes, severity, and recommended actions are owned by code. The TOML configuration selects which patterns are active and optionally overrides the per-pattern processing strategy:
+Pattern regexes, severity, and recommended actions are owned by code. The following Helm/YAML configuration selects which patterns are active and optionally overrides the per-pattern processing strategy:
 
 ```yaml
 syslog-health-monitor:

@@ -237,10 +237,10 @@ janitor:
     defaultTTL: "336h"
 ```
 
-#### enabled
+### enabled
 When `true`, the TTL controller deletes completed `RebootNode`, `TerminateNode`, and `GPUReset` CRs after `defaultTTL` has elapsed since completion.
 
-#### defaultTTL
+### defaultTTL
 Duration after which completed CRs are deleted. Default is `336h` (14 days). Use a shorter value (e.g. `"24h"`) in test environments to keep the CR list clean.
 
 ## Webhook
@@ -255,5 +255,5 @@ janitor:
     certProvider: cert-manager
 ```
 
-#### certProvider
+### certProvider
 cert-manager is a required dependency. The webhook certificate is issued by the `certIssuer` ClusterIssuer and renewed automatically.

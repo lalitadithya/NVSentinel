@@ -291,7 +291,7 @@ The external event sink must:
 
 1. Accept `POST` requests at the configured endpoint
 2. Accept `Content-Type: application/cloudevents+json` header
-3. Validate `Authorization: Bearer {token}` header
+3. Validate `Authorization: Bearer {token}` header (verify token authenticity and validity using your auth provider — the example shows the expected header format only)
 4. Return HTTP 2xx status codes for successful ingestion
 5. Return HTTP 4xx/5xx status codes for failures
 6. Handle CloudEvents 1.0 JSON format

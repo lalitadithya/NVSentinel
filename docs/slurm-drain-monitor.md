@@ -19,7 +19,7 @@ Slurm operators run custom health check scripts that drain nodes with structured
 
 The Slurm Drain Monitor runs as a Deployment (controller) in the cluster:
 
-1. **Watches slurmd pods** matching a configurable label selector (default: `app.kubernetes.io/name=slurmd`) in a configurable namespace (default: `slurm`)
+1. **Watches slurmd pods** matching a configurable label selector (default: `app.kubernetes.io/name=slurmd,app.kubernetes.io/component=worker`) in a configurable namespace (default: `slurm`)
 2. **Extracts the drain reason** from pod labels set by the Slurm health check scripts when a node is drained
 3. **Splits compound reasons** using a configurable delimiter, then evaluates each segment in order
 4. **Matches against patterns** — each pattern is a regex mapped to a `checkName`, `componentClass`, `isFatal` flag, `message`, and `recommendedAction`; all patterns are evaluated independently
