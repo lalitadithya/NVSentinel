@@ -79,13 +79,13 @@ janitor:
         insecure: false
 ```
 
-#### enabled
+### enabled
 When `true`, the Janitor uses TLS for the gRPC connection to the Janitor Provider. Disable only in isolated test environments.
 
-#### caSecretName
+### caSecretName
 Name of the Kubernetes Secret containing `ca.crt` used to verify the Janitor Provider's TLS certificate. The self-signed certificate is managed by cert-manager, which is a required dependency.
 
-#### insecure
+### insecure
 Set to `true` to skip TLS certificate verification. For development use only; never enable in production.
 
 ### Service Account Token Auth
@@ -100,13 +100,13 @@ janitor:
         expirationSeconds: 3600
 ```
 
-#### enabled
+### enabled
 When `true`, the Janitor mounts a projected ServiceAccount token and sends it to the Janitor Provider for authentication.
 
-#### audience
+### audience
 The token audience must match the `auth.audiences` value configured on the Janitor Provider.
 
-#### expirationSeconds
+### expirationSeconds
 Requested lifetime of the projected ServiceAccount token in seconds. Kubernetes automatically rotates the token before expiry.
 
 ## Manual Mode
@@ -211,19 +211,19 @@ janitor:
 
 Handles `GPUReset` CRs. Before issuing the GPU reset, the controller pauses the deployment or DaemonSet named by `serviceManager.name` to prevent the GPU Operator from interfering with the reset sequence.
 
-#### serviceManager.name
+### serviceManager.name
 Name of the Kubernetes Deployment or DaemonSet to pause during GPU reset. Set to the GPU Operator deployment name in your cluster.
 
-#### resetJob.writeSysLogEvent
+### resetJob.writeSysLogEvent
 When `true`, the reset job writes a kernel syslog message on reset completion. Useful for correlating reset events with node-level logs.
 
-#### resetJob.runtimeClassName
+### resetJob.runtimeClassName
 NVIDIA RuntimeClass name used by the GPU reset Job. Must match a RuntimeClass installed in the cluster.
 
-#### resetJob.image
+### resetJob.image
 Container image for the GPU reset Job. Leave `tag` empty to use the chart default.
 
-#### resetJob.resources
+### resetJob.resources
 Resource requests and limits for the GPU reset Job container.
 
 ## TTL-Based CR Cleanup

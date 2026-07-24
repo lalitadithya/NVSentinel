@@ -2,7 +2,6 @@
 
 Preflight is a mutating admission webhook that injects GPU diagnostic init containers (DCGM diagnostics, optional NCCL loopback / all-reduce) into pods that request GPUs in namespaces you opt in via labels. It answers "is this GPU healthy enough to start?" before your workload runs—separate from continuous [GPU health monitoring](../gpu-health-monitor.md).
 
-For architecture, tradeoffs, and metrics design, see [ADR-026: Preflight checks](../designs/026-preflight-checks.md).
 
 ## Prerequisites
 

@@ -19,13 +19,15 @@ Individual health events capture what happened at a point in time, but many hard
 
 The Health Events Analyzer consumes MongoDB change stream events from the health events collection:
 
-1. **Ingests raw events** from GPU Health Monitor (DCGM) and Syslog Health Monitor, stored in the collection by Platform Connectors
+1. **Ingests raw events** from any health monitor registered in the cluster (GPU Health Monitor, Syslog Health Monitor, NIC Health Monitor, CSP Health Monitor, etc.), stored in the collection by Platform Connectors
 2. **Runs aggregation pipelines** over configurable time windows (hours to days) to look for patterns across events on the same node or GPU
 3. **Evaluates rules** shipped as TOML-encoded MongoDB aggregation stages in the Helm `config:` block; each rule targets a specific pattern (e.g., repeated failures, die-level clustering, XID 74 register decoding, multiple remediations)
 4. **Emits synthetic events** when a rule matches: each derived event carries its own `checkName` (the rule name) and flows through the standard Fault Quarantine → Node Drainer → Fault Remediation pipeline exactly as if a health monitor had reported it
 5. **Applies the configured processing strategy** — `EXECUTE_REMEDIATION` for live operation or `STORE_ONLY` for shadow-mode observation with no side effects
 
 The Analyzer does not modify or delete raw events. It only appends new synthetic events into the same pipeline.
+
+**Loop prevention**: The Analyzer excludes its own events at two layers. First, the change-stream ingestion filter drops any event where `agent == "health-events-analyzer"`, so derived events are never re-ingested. Second, every rule's aggregation pipeline opens with a guard `$match` stage that also filters out events produced by `health-events-analyzer`, so the Analyzer never counts its own synthetic events when evaluating rules.
 
 ### XID 74 Register Decoding
 

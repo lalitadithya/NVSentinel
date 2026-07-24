@@ -656,7 +656,7 @@ spec:
 - **Service Definition**: `PlatformConnector.HealthEventOccurredV1`
 - **Client**: Health Monitors (GPU, Syslog, CSP)
 - **Server**: Platform Connectors
-- **Transport**: Unix domain socket (default path: `/var/run/nvsentinel.sock`)
+- **Transport**: Unix domain socket (default path: `/var/run/nvsentinel.sock`; the CSP health monitor uses `/run/nvsentinel/nvsentinel.sock`)
 - **TLS**: Optional (cert-manager integration)
 
 ### MongoDB Connections

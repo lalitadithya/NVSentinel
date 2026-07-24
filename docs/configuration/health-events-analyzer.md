@@ -55,13 +55,16 @@ Controls whether derived events trigger downstream remediation actions or are re
 
 ```yaml
 health-events-analyzer:
-  processingStrategy: EXECUTE_REMEDIATION  # Options: EXECUTE_REMEDIATION, STORE_ONLY
+  processingStrategy: EXECUTE_REMEDIATION  # Options: EXECUTE_REMEDIATION, STORE_AND_ANALYSE, STORE_ONLY
 ```
 
 **Options:**
 
 #### EXECUTE_REMEDIATION
 Normal operating mode. When a rule fires, downstream modules may update cluster state — applying node conditions, quarantining nodes, draining workloads, or triggering remediations.
+
+#### STORE_AND_ANALYSE
+Events are persisted and ingested by the Health Events Analyzer for rule evaluation. The individual event does not directly trigger quarantine or remediation, but HEA rules can still match on it and emit new `EXECUTE_REMEDIATION` synthetic events as a result — for example, a burst of deduplicated `STORE_AND_ANALYSE` events may collectively satisfy a repeated-failure rule. Use this when you want the raw event suppressed from immediate action but still want HEA correlation to fire.
 
 #### STORE_ONLY
 Observability-only mode. Derived events are persisted and exported but do not modify any cluster resources. Use this mode to shadow-test new or customised rules in production before enabling full remediation.

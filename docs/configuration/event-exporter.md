@@ -298,6 +298,8 @@ The external event sink must:
 
 ### Example Sink Implementation
 
+> **Note**: The following is illustrative pseudocode showing request structure handling. The `# Verify Bearer token` section only checks the header format — replace it with actual token signature verification and validation using your authentication provider (e.g. JWT verification, OAuth introspection, or a shared-secret HMAC check).
+
 A minimal sink endpoint should:
 
 ```python
