@@ -19,13 +19,12 @@ A single bad GPU can silently corrupt a training run or leave a node sitting idl
 - [NVIDIA GPU Operator](https://github.com/NVIDIA/gpu-operator)
 - [cert-manager](https://cert-manager.io/) v1.19+
 - Persistent storage support for a database
-- Prometheus (optional, for metrics)
 
 ```bash
 # GPU Operator: enable DCGM standalone mode (required)
 # By default the GPU Operator embeds DCGM inside dcgm-exporter and doesn't
 # expose it as its own service. NVSentinel connects to DCGM directly, so add
-# this flag to however you already install/upgrade the GPU Operator:
+# `dcgm.enabled=true` to however you already install/upgrade the GPU Operator:
 helm repo add nvidia https://helm.ngc.nvidia.com/nvidia --force-update
 helm upgrade --install gpu-operator nvidia/gpu-operator \
   --namespace gpu-operator --create-namespace \
@@ -37,17 +36,6 @@ helm repo add jetstack https://charts.jetstack.io --force-update
 helm upgrade --install cert-manager jetstack/cert-manager \
   --namespace cert-manager --create-namespace \
   --version v1.19.1 --set installCRDs=true \
-  --wait
-
-# Prometheus (optional, for metrics collection)
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
-helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
-  --namespace monitoring --create-namespace \
-  --set prometheus.enabled=true \
-  --set alertmanager.enabled=false \
-  --set grafana.enabled=false \
-  --set kubeStateMetrics.enabled=false \
-  --set nodeExporter.enabled=false \
   --wait
 ```
 
@@ -66,9 +54,11 @@ This turns on health monitoring only. NVSentinel watches your GPUs and system lo
 ```bash
 NVSENTINEL_VERSION=v1.19.0
 
+# Drop the --set podMonitor.enabled=false flag if prometheus is installed
 helm install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
   --version "$NVSENTINEL_VERSION" \
   --namespace nvsentinel --create-namespace \
+  --set podMonitor.enabled=false \
   --wait
 ```
 
@@ -88,10 +78,12 @@ Once you trust what it's reporting, turn on remediation too. NVSentinel will now
 By default, both actions run as a privileged job right on the node itself, so this works on day one with no cloud credentials to set up, on any infrastructure: on-prem, or any cloud. 
 
 ```bash
+# Drop the --set podMonitor.enabled=false flag if prometheus is installed
 helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
   --version "$NVSENTINEL_VERSION" \
   --namespace nvsentinel --create-namespace \
   -f distros/kubernetes/nvsentinel/values-remediation.yaml \
+  --set podMonitor.enabled=false \
   --wait
 ```
 
@@ -114,11 +106,13 @@ Multi-node checks also need to know which pods belong to the same distributed jo
 2. **Enable preflight:**
 
    ```bash
+   # Drop the --set podMonitor.enabled=false flag if prometheus is installed
    helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
      --version "$NVSENTINEL_VERSION" \
      --namespace nvsentinel --create-namespace \
      -f distros/kubernetes/nvsentinel/values-remediation.yaml \
      -f distros/kubernetes/nvsentinel/values-preflight-kube.yaml \
+     --set podMonitor.enabled=false \
      --wait
    ```
 
