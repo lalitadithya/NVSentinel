@@ -14,13 +14,24 @@ A single bad GPU can silently corrupt a training run or leave a node sitting idl
 
 ## Prerequisites
 
-- Kubernetes 1.34+ and Helm 3.0+
-- [NVIDIA GPU Operator](https://github.com/NVIDIA/gpu-operator) (provides DCGM, used for GPU health checks)
-- [cert-manager](https://cert-manager.io/) v1.19+ (used for internal TLS)
+- Kubernetes 1.34+ 
+- Helm 3.0+
+- [NVIDIA GPU Operator](https://github.com/NVIDIA/gpu-operator)
+- [cert-manager](https://cert-manager.io/) v1.19+
 - Persistent storage support for a database
 - Prometheus (optional, for metrics)
 
 ```bash
+# GPU Operator: enable DCGM standalone mode (required)
+# By default the GPU Operator embeds DCGM inside dcgm-exporter and doesn't
+# expose it as its own service. NVSentinel connects to DCGM directly, so add
+# this flag to however you already install/upgrade the GPU Operator:
+helm repo add nvidia https://helm.ngc.nvidia.com/nvidia --force-update
+helm upgrade --install gpu-operator nvidia/gpu-operator \
+  --namespace gpu-operator --create-namespace \
+  --set dcgm.enabled=true \
+  --wait
+
 # cert-manager (required)
 helm repo add jetstack https://charts.jetstack.io --force-update
 helm upgrade --install cert-manager jetstack/cert-manager \
@@ -47,6 +58,10 @@ Most teams roll NVSentinel out in stages:
 ### Stage 1: Monitor
 
 This turns on health monitoring only. NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. It won't cordon a node, evict a pod or reboot a machine. Nothing here can disrupt a workload, so it's safe to run anywhere while you get a feel for what it reports. The defaults below are all you need.
+
+> [!NOTE]
+> **Host installed drivers**
+> If your GPU nodes get their NVIDIA driver from the host image instead of the GPU Operator's driver DaemonSet, add `--set labeler.assumeDriverInstalled=true` to every NVSentinel install/upgrade command below.
 
 ```bash
 NVSENTINEL_VERSION=v1.19.0
