@@ -6,7 +6,12 @@
 
 **NVSentinel detects and remediates GPU faults on Kubernetes nodes**
 
-A single bad GPU can silently corrupt a training run or leave a node sitting idle for hours before anyone notices. NVSentinel catches these faults as they happen, cordons and drains the affected node, then fixes it with a GPU reset or a reboot, and puts it back into service, no paging required.
+A single bad GPU can silently corrupt a training run or leave a node sitting idle for hours before anyone notices. NVSentinel **detects** faults as they happen, **protects** jobs by cordoning and draining the affected node, and **remediates** it with a GPU reset or a reboot, returning it to service with no paging required.
+
+- 🔍 **Detect**: real-time GPU, NIC, and system-level fault detection via DCGM, syslog, and cloud provider maintenance events
+- 🛡️ **Protect**: cordon and drain the affected node before a fault spreads to other jobs
+- 🔧 **Remediate**: auto-repair with a targeted GPU reset or a full reboot, then bring the node back into service
+- 🧩 **Extensible**: pluggable health monitors, drain strategies, and remediation actions
 
 > [!NOTE]
 > **Beta / Stable**
@@ -20,6 +25,8 @@ A single bad GPU can silently corrupt a training run or leave a node sitting idl
 - [cert-manager](https://cert-manager.io/) v1.19+
 - Persistent storage support for a database
 
+The commands below get you ready for NVSentinel: the first makes sure the GPU Operator exposes DCGM as its own service, since NVSentinel queries it directly instead of going through dcgm-exporter; the second installs cert-manager, which issues the TLS certificates NVSentinel's webhooks and internal services need.
+
 ```bash
 # GPU Operator: enable DCGM standalone mode (required)
 # By default the GPU Operator embeds DCGM inside dcgm-exporter and doesn't
@@ -31,7 +38,7 @@ helm upgrade --install gpu-operator nvidia/gpu-operator \
   --set dcgm.enabled=true \
   --wait
 
-# cert-manager (required)
+# cert-manager (required): issues TLS certs for NVSentinel's webhooks and internal gRPC
 helm repo add jetstack https://charts.jetstack.io --force-update
 helm upgrade --install cert-manager jetstack/cert-manager \
   --namespace cert-manager --create-namespace \
@@ -41,14 +48,14 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 
 ## Quick Start
 
-One command works for both a first install and every later upgrade. By default it only turns on health monitoring: it won't cordon a node, evict a pod, or reboot a machine, so it's safe to run anywhere. Uncomment a flag to layer on more; see [Adoption](#adoption) below for what each one does and the order most teams turn them on in.
+One command works for both a first install and every later upgrade. By default it only turns on health monitoring: it won't cordon a node, evict a pod, or reboot a machine, so it's safe to run anywhere. Uncomment a flag to layer on more; see [Adoption](#adoption) below for what each one does and the order we recommend turning them on in.
 
 ```bash
 NVSENTINEL_VERSION=v1.20.0
 
 FEATURES=(
-  --set podMonitor.enabled=false                                  # drop this if Prometheus Operator is already installed
-  # --set labeler.assumeDriverInstalled=true                      # uncomment if GPU nodes use host-installed drivers, not the GPU Operator's driver DaemonSet
+  --set podMonitor.enabled=false                                  # drop this if Prometheus is installed
+  # --set labeler.assumeDriverInstalled=true                      # uncomment if GPU nodes use host installed drivers
   # -f distros/kubernetes/nvsentinel/values-remediation.yaml      # uncomment to enable remediation
   # -f distros/kubernetes/nvsentinel/values-preflight-kube.yaml   # uncomment to enable preflight
 )
@@ -68,26 +75,26 @@ kubectl get pods -n nvsentinel
 
 ## Adoption
 
-Most teams roll these out one at a time, in this order, re-running the command above with one more `-f` flag each time.
+We recommend rolling these out one at a time, in this order, re-running the command above with with additional features uncommented.
 
 ### 1. Monitor
 
-NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. Nothing here can disrupt a workload, so it's the safe default to run anywhere while you get a feel for what it reports.
+Let's start by enabling health monitoring: NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. Nothing here can disrupt a workload, so it's the safe default to run anywhere while you get a feel for what it reports.
 
 ### 2. Remediate
 
-Once you trust what it's reporting, uncomment the `values-remediation.yaml` line in the `FEATURES` array above and rerun the command. NVSentinel will now cordon a faulty node, drain its workloads, and fix it automatically:
+When you're ready to move beyond detection, uncomment the `values-remediation.yaml` line in the `FEATURES` array above and rerun the command. NVSentinel will cordon a faulty node, drain its workloads, and run remediation automatically, targeted so that:
 
 - Faults that don't need a full restart get a GPU reset, so the rest of the node's GPUs stay in service.
 - Everything else gets a node reboot.
 
-By default, both actions run as a privileged job right on the node itself, so this works on day one with no cloud credentials to set up, on any infrastructure: on-prem, or any cloud. To reboot nodes through your cloud provider's API instead, see the [cloud provider configuration guide](https://docs.nvidia.com/nvsentinel/configuration/janitor-provider/#cloud-provider-selection).
+By default, both actions run as a privileged job right on the node itself, so this works on day one with no credentials to set up, regardless of whether you're running on-prem or on a CSP. To reboot nodes through your cloud provider's API instead, see the [cloud provider configuration guide](https://docs.nvidia.com/nvsentinel/configuration/janitor-provider/#cloud-provider-selection).
 
-### 3. Preflight (optional)
+### 3. Preflight
 
-Preflight is an active check that runs as an init container in the workload pod to confirm the node is ready to take that workload. A job never lands on bad hardware in the first place.
+Preflight tries to keep a job from ever landing on bad hardware. It runs as an active check, an init container in the workload pod, that confirms the node is ready before the job starts.
 
-Uncomment the `values-preflight-kube.yaml` line in the `FEATURES` array and rerun the command. Multi-node checks also need to know which pods belong to the same distributed job; this file covers that using Kubernetes' native gang scheduling (the `GenericWorkload` and `GangScheduling` feature gates need to be enabled by a cluster admin). Using a third-party scheduler instead? See the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery).
+Uncomment the `values-preflight-kube.yaml` line in the `FEATURES` array and rerun the command. This file adds support for Kubernetes' native gang scheduling (the `GenericWorkload` and `GangScheduling` feature gates need to be enabled by a cluster admin). Using a different scheduler instead? See the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery).
 
 - **Label the namespaces that should run it.** It's opt-in per namespace, so nothing changes until you do this:
 
