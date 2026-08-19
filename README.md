@@ -41,53 +41,24 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 
 ## Quick Start
 
-Most teams roll NVSentinel out in stages:
-
-### Stage 1: Monitor
-
-This turns on health monitoring only. NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. It won't cordon a node, evict a pod or reboot a machine. Nothing here can disrupt a workload, so it's safe to run anywhere while you get a feel for what it reports. The defaults below are all you need.
-
-> [!NOTE]
-> **Host installed drivers**
-> If your GPU nodes get their NVIDIA driver from the host image instead of the GPU Operator's driver DaemonSet, add `--set labeler.assumeDriverInstalled=true` to every NVSentinel install/upgrade command below.
+One command works for both a first install and every later upgrade. By default it only turns on health monitoring: it won't cordon a node, evict a pod, or reboot a machine, so it's safe to run anywhere. Uncomment a flag to layer on more; see [Adoption](#adoption) below for what each one does and the order most teams turn them on in.
 
 ```bash
 NVSENTINEL_VERSION=v1.20.0
 
-# Drop the --set podMonitor.enabled=false flag if prometheus is installed
-helm install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
-  --version "$NVSENTINEL_VERSION" \
-  --namespace nvsentinel --create-namespace \
-  --set podMonitor.enabled=false \
-  --wait
-```
+FEATURES=(
+  --set podMonitor.enabled=false                                  # drop this if Prometheus Operator is already installed
+  # --set labeler.assumeDriverInstalled=true                      # uncomment if GPU nodes use host-installed drivers, not the GPU Operator's driver DaemonSet
+  # -f distros/kubernetes/nvsentinel/values-remediation.yaml      # uncomment to enable remediation
+  # -f distros/kubernetes/nvsentinel/values-preflight-kube.yaml   # uncomment to enable preflight
+)
 
-Verify it's running:
-
-```bash
-kubectl get pods -n nvsentinel
-```
-
-### Stage 2: Remediate
-
-Once you trust what it's reporting, turn on remediation too. NVSentinel will now cordon a faulty node, drain its workloads, and fix it automatically:
-
-- Faults that don't need a full restart get an GPU reset, so the rest of the node's GPUs stay in service.
-- Everything else gets a node reboot.
-
-By default, both actions run as a privileged job right on the node itself, so this works on day one with no cloud credentials to set up, on any infrastructure: on-prem, or any cloud. 
-
-```bash
-# Drop the --set podMonitor.enabled=false flag if prometheus is installed
 helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
   --version "$NVSENTINEL_VERSION" \
   --namespace nvsentinel --create-namespace \
-  -f distros/kubernetes/nvsentinel/values-remediation.yaml \
-  --set podMonitor.enabled=false \
-  --wait
+  --wait \
+  "${FEATURES[@]}"
 ```
-
-To reboot nodes through your cloud provider's API instead, see the [cloud provider configuration guide](https://docs.nvidia.com/nvsentinel/configuration/janitor-provider/#cloud-provider-selection).
 
 Verify it's running:
 
@@ -95,34 +66,34 @@ Verify it's running:
 kubectl get pods -n nvsentinel
 ```
 
-### Stage 3: Preflight (optional)
+## Adoption
+
+Most teams roll these out one at a time, in this order, re-running the command above with one more `-f` flag each time.
+
+### 1. Monitor
+
+NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. Nothing here can disrupt a workload, so it's the safe default to run anywhere while you get a feel for what it reports.
+
+### 2. Remediate
+
+Once you trust what it's reporting, uncomment the `values-remediation.yaml` line in the `FEATURES` array above and rerun the command. NVSentinel will now cordon a faulty node, drain its workloads, and fix it automatically:
+
+- Faults that don't need a full restart get a GPU reset, so the rest of the node's GPUs stay in service.
+- Everything else gets a node reboot.
+
+By default, both actions run as a privileged job right on the node itself, so this works on day one with no cloud credentials to set up, on any infrastructure: on-prem, or any cloud. To reboot nodes through your cloud provider's API instead, see the [cloud provider configuration guide](https://docs.nvidia.com/nvsentinel/configuration/janitor-provider/#cloud-provider-selection).
+
+### 3. Preflight (optional)
 
 Preflight is an active check that runs as an init container in the workload pod to confirm the node is ready to take that workload. A job never lands on bad hardware in the first place.
 
-Multi-node checks also need to know which pods belong to the same distributed job, so setup depends on the scheduler you use:
+Uncomment the `values-preflight-kube.yaml` line in the `FEATURES` array and rerun the command. Multi-node checks also need to know which pods belong to the same distributed job; this file covers that using Kubernetes' native gang scheduling (the `GenericWorkload` and `GangScheduling` feature gates need to be enabled by a cluster admin). Using a third-party scheduler instead? See the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery).
 
-1. **Check your scheduler.** By default, NVSentinel uses Kubernetes' native gang scheduling, covered by [values-preflight-kube.yaml](distros/kubernetes/nvsentinel/values-preflight-kube.yaml) (Note: the `GenericWorkload` and `GangScheduling` feature gates should enabled by a cluster admin). For different schedulers (KAI, Volcano, etc.), see the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery) for configuration options.
+- **Label the namespaces that should run it.** It's opt-in per namespace, so nothing changes until you do this:
 
-2. **Enable preflight:**
-
-   ```bash
-   # Drop the --set podMonitor.enabled=false flag if prometheus is installed
-   helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
-     --version "$NVSENTINEL_VERSION" \
-     --namespace nvsentinel --create-namespace \
-     -f distros/kubernetes/nvsentinel/values-remediation.yaml \
-     -f distros/kubernetes/nvsentinel/values-preflight-kube.yaml \
-     --set podMonitor.enabled=false \
-     --wait
-   ```
-
-   Swap in your scheduler's values file from step 1 if you're not on native Kubernetes gang scheduling.
-
-3. **Label the namespaces that should run it.** It's opt-in per namespace, so nothing changes until you do this:
-
-   ```bash
-   kubectl label namespace <your-namespace> nvsentinel.nvidia.com/preflight=enabled
-   ```
+  ```bash
+  kubectl label namespace <your-namespace> nvsentinel.nvidia.com/preflight=enabled
+  ```
 
 Verify it's running: submit a GPU pod in the labeled namespace, then check that preflight added its init containers.
 
