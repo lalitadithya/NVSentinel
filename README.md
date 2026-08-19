@@ -137,17 +137,24 @@ NVSentinel is a set of independent modules coordinated through a shared MongoDB 
 ```mermaid
 graph LR
     subgraph "Health Monitors"
-        GPU["GPU Health Monitor<br/>(DCGM Integration)"]
+        GPU["GPU Health Monitor<br/>(DCGM)"]
         SYS["Syslog Health Monitor<br/>(Journalctl)"]
-        CSP["CSP Health Monitor<br/>(CSP APIs)"]
+        CSP["CSP Health Monitor<br/>(Maintenance Events)"]
+        NIC["NIC Health Monitor<br/>(NIC)"]
+        HEA["Health Events Analyzer<br/>(Pattern Detection)"]
+        KOM["Kubernetes Object Monitor<br/>(Kube objects)"]
     end
 
-    subgraph "Core Processing"
+    subgraph "Ingestion"
         PC["Platform Connectors<br/>(gRPC Server)"]
         STORE[("MongoDB Store<br/>(Event Database)")]
-        FQ["Fault Quarantine<br/>(Node Cordon)"]
+    end
+
+    subgraph "Fault Management"
+        FQ["Fault Quarantine<br/>(Node Cordon / Taint)"]
         ND["Node Drainer<br/>(Workload Eviction)"]
-        FR["Fault Remediation<br/>(Reset / Reboot)"]
+        FR["Fault Remediation<br/>(Trigger Node Maintenance)"]
+        JAN["Janitor<br/>(Reset / Reboot)"]
     end
 
     subgraph "Kubernetes Cluster"
@@ -157,18 +164,28 @@ graph LR
     GPU -->|gRPC| PC
     SYS -->|gRPC| PC
     CSP -->|gRPC| PC
+    NIC -->|gRPC| PC
+    KOM -->|gRPC| PC
+    HEA -->|gRPC| PC
 
     PC -->|persist| STORE
-    PC <-->|update status| K8S
+    PC -->|update node conditions, events| K8S
+    STORE ~~~ FQ
+    STORE ~~~ ND
+    STORE ~~~ FR
+    STORE ~~~ JAN
 
-    FQ -.->|watch changes| STORE
+    FQ -->|reconcile changes| STORE
     FQ -->|cordon| K8S
 
-    ND -.->|watch changes| STORE
+    ND -->|reconcile changes| STORE
     ND -->|drain| K8S
 
-    FR -.->|watch changes| STORE
-    FR -->|create CRDs| K8S
+    FR -->|reconcile changes| STORE
+    FR -->|create maintenance CRs| K8S
+
+    JAN -.->|reconcile maintenance CRs| K8S
+    JAN -->|reboot / reset| K8S
 ```
 
 
