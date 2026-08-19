@@ -101,7 +101,7 @@ Preflight is an active check that runs as an init container in the workload pod 
 
 Multi-node checks also need to know which pods belong to the same distributed job, so setup depends on the scheduler you use:
 
-1. **Check your scheduler.** By default, NVSentinel uses Kubernetes' native gang scheduling (the `PodGroup`/`GenericWorkload` API, Kubernetes 1.36+), covered by [values-preflight-kube.yaml](distros/kubernetes/nvsentinel/values-preflight-kube.yaml). For different schedulers (KAI, Volcano, etc.), see the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery) for configuration options. 
+1. **Check your scheduler.** By default, NVSentinel uses Kubernetes' native gang scheduling, covered by [values-preflight-kube.yaml](distros/kubernetes/nvsentinel/values-preflight-kube.yaml) (Note: the `GenericWorkload` and `GangScheduling` feature gates should enabled by a cluster admin). For different schedulers (KAI, Volcano, etc.), see the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery) for configuration options.
 
 2. **Enable preflight:**
 
@@ -272,6 +272,7 @@ Getting Started:
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
+
 ---
 
 *Built with ❤️ by NVIDIA for GPU infrastructure reliability*
