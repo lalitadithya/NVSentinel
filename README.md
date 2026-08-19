@@ -54,10 +54,14 @@ One command works for both a first install and every later upgrade. By default i
 NVSENTINEL_VERSION=v1.20.0
 
 FEATURES=(
-  --set podMonitor.enabled=false                                  # drop this if Prometheus is installed
-  # --set labeler.assumeDriverInstalled=true                      # uncomment if GPU nodes use host installed drivers
-  # -f distros/kubernetes/nvsentinel/values-remediation.yaml      # uncomment to enable remediation
-  # -f distros/kubernetes/nvsentinel/values-preflight-kube.yaml   # uncomment to enable preflight
+  --set podMonitor.enabled=false                 # drop this if Prometheus Operator is installed
+  # --set labeler.assumeDriverInstalled=true     # uncomment if GPU nodes use host installed drivers
+
+  # uncomment to enable remediation:
+  # -f https://raw.githubusercontent.com/NVIDIA/NVSentinel/main/distros/kubernetes/nvsentinel/values-remediation.yaml
+  
+  # uncomment to enable preflight:
+  # -f https://raw.githubusercontent.com/NVIDIA/NVSentinel/main/distros/kubernetes/nvsentinel/values-preflight-kube.yaml
 )
 
 helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
@@ -75,7 +79,7 @@ kubectl get pods -n nvsentinel
 
 ## Adoption
 
-We recommend rolling these out one at a time, in this order, re-running the command above with with additional features uncommented.
+We recommend rolling these out one at a time, in this order, re-running the command above with additional features uncommented.
 
 ### 1. Monitor
 
