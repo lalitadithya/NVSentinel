@@ -1,7 +1,7 @@
 # NVSentinel
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.25+-326CE5.svg?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.34+-326CE5.svg?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
 [![Helm](https://img.shields.io/badge/Helm-3.0+-0F1689.svg?logo=helm&logoColor=white)](https://helm.sh/)
 
 **NVSentinel detects and remediates GPU faults on Kubernetes nodes**
@@ -42,7 +42,7 @@ helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
 
 ## Quick Start
 
-Most teams roll NVSentinel out in two stages:
+Most teams roll NVSentinel out in stages:
 
 ### Stage 1: Monitor
 
@@ -86,6 +86,39 @@ Verify it's running:
 
 ```bash
 kubectl get pods -n nvsentinel
+```
+
+### Stage 3: Preflight (optional)
+
+Preflight is an active check that runs as an init container in the workload pod to confirm the node is ready to take that workload. A job never lands on bad hardware in the first place.
+
+Multi-node checks also need to know which pods belong to the same distributed job, so setup depends on the scheduler you use:
+
+1. **Check your scheduler.** By default, NVSentinel uses Kubernetes' native gang scheduling (the `PodGroup`/`GenericWorkload` API, Kubernetes 1.36+), covered by [values-preflight-kube.yaml](distros/kubernetes/nvsentinel/values-preflight-kube.yaml). For different schedulers (KAI, Volcano, etc.), see the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery) for configuration options. 
+
+2. **Enable preflight:**
+
+   ```bash
+   helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
+     --version "$NVSENTINEL_VERSION" \
+     --namespace nvsentinel --create-namespace \
+     -f distros/kubernetes/nvsentinel/values-remediation.yaml \
+     -f distros/kubernetes/nvsentinel/values-preflight-kube.yaml \
+     --wait
+   ```
+
+   Swap in your scheduler's values file from step 1 if you're not on native Kubernetes gang scheduling.
+
+3. **Label the namespaces that should run it.** It's opt-in per namespace, so nothing changes until you do this:
+
+   ```bash
+   kubectl label namespace <your-namespace> nvsentinel.nvidia.com/preflight=enabled
+   ```
+
+Verify it's running: submit a GPU pod in the labeled namespace, then check that preflight added its init containers.
+
+```bash
+kubectl get pod <pod-name> -n <your-namespace> -o jsonpath='{.spec.initContainers[*].name}'
 ```
 
 ## Architecture
