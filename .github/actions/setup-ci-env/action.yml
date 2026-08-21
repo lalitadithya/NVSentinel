@@ -18,6 +18,11 @@ description: 'Install all CI tools and setup build environment'
 runs:
   using: 'composite'
   steps:
+    - name: Setup proxy cache
+      uses: nv-gha-runners/setup-proxy-cache@14229018fe157c83e03c008f27d183d8e99bc67c # main
+      with:
+        enable-apt: true
+
     - name: Load versions from .versions.yaml
       id: versions
       shell: bash
