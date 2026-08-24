@@ -48,27 +48,26 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 
 ## Quick Start
 
-One command works for both a first install and every later upgrade. By default it only turns on health monitoring: it won't cordon a node, evict a pod, or reboot a machine, so it's safe to run anywhere. Uncomment a flag to layer on more; see [Adoption](#adoption) below for what each one does and the order we recommend turning them on in.
+One command works for both a first install and every later upgrade. By default it only turns on health monitoring: it won't cordon a node, evict a pod, or reboot a machine, so it's safe to run anywhere. The flags below the command are everything you can layer on later; see [Adoption](#adoption) for what each one does.
 
 ```bash
 NVSENTINEL_VERSION=v1.20.0
 
-FEATURES=(
-  --set podMonitor.enabled=false                 # drop this if Prometheus Operator is installed
-  # --set labeler.assumeDriverInstalled=true     # uncomment if GPU nodes use host installed drivers
-
-  # uncomment to enable remediation:
-  # -f https://raw.githubusercontent.com/NVIDIA/NVSentinel/main/distros/kubernetes/nvsentinel/values-remediation.yaml
-  
-  # uncomment to enable preflight:
-  # -f https://raw.githubusercontent.com/NVIDIA/NVSentinel/main/distros/kubernetes/nvsentinel/values-preflight-kube.yaml
-)
-
 helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
   --version "$NVSENTINEL_VERSION" \
   --namespace nvsentinel --create-namespace \
-  --wait \
-  "${FEATURES[@]}"
+  --set podMonitor.enabled=false \
+  --wait
+
+# --set labeler.assumeDriverInstalled=true       # GPU nodes use host-installed drivers
+# --set global.mongodbStore.enabled=true         # Protect: cordon
+# --set global.faultQuarantine.enabled=true      # Protect: cordon
+# --set global.nodeDrainer.enabled=true          # Protect: + drain
+# --set global.faultRemediation.enabled=true     # Remediate
+# --set global.janitor.enabled=true              # Remediate
+# --set global.janitorProvider.enabled=true      # Remediate
+# --set janitor-provider.csp.provider=generic    # Remediate
+# --set global.preflight.enabled=true            # Preflight
 ```
 
 Verify it's running:
@@ -79,26 +78,48 @@ kubectl get pods -n nvsentinel
 
 ## Adoption
 
-We recommend rolling these out one at a time, in this order, re-running the command above with additional features uncommented.
+We recommend starting with monitoring, then enabling one step at a time as you get comfortable with how NVSentinel runs in your environment.
 
 ### 1. Monitor
 
-Let's start by enabling health monitoring: NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. Nothing here can disrupt a workload, so it's the safe default to run anywhere while you get a feel for what it reports.
+NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. Nothing here can disrupt a workload, so it's the safe default to run anywhere while you get a feel for what it reports. The command above already does this; no extra flags needed.
 
-### 2. Remediate
+### 2a. Protect: cordon and drain
 
-When you're ready to move beyond detection, uncomment the `values-remediation.yaml` line in the `FEATURES` array above and rerun the command. NVSentinel will cordon a faulty node, drain its workloads, and run remediation automatically, targeted so that:
+Uncomment these flags:
 
-- Faults that don't need a full restart get a GPU reset, so the rest of the node's GPUs stay in service.
-- Everything else gets a node reboot.
+```bash
+--set global.mongodbStore.enabled=true \
+--set global.faultQuarantine.enabled=true \
+--set global.nodeDrainer.enabled=true
+```
 
-By default, both actions run as a privileged job right on the node itself, so this works on day one with no credentials to set up, regardless of whether you're running on-prem or on a CSP. To reboot nodes through your cloud provider's API instead, see the [cloud provider configuration guide](https://docs.nvidia.com/nvsentinel/configuration/janitor-provider/#cloud-provider-selection).
+NVSentinel will now cordon a faulty node, so your scheduler stops placing new work on it, and drain its existing workloads. Only want to cordon, without draining yet? Drop the `nodeDrainer` line above. This is as far as NVSentinel goes unless you also enable remediation below; a cordoned (and optionally drained) node stays isolated until you (or your own tooling) repair it.
 
-### 3. Preflight
+### 2b. Protect: Remediate
+
+Remediation builds on Protect, so uncomment all of Protect's flags plus these:
+
+```bash
+--set global.faultRemediation.enabled=true \
+--set global.janitor.enabled=true \
+--set global.janitorProvider.enabled=true \
+--set janitor-provider.csp.provider=generic
+```
+
+NVSentinel will now reboot a faulty node automatically once it's cordoned and drained. This runs as a privileged job right on the node itself, so it works on day one with no credentials to set up, regardless of whether you're running on-prem or on a CSP. To reboot through your cloud provider's API instead, see the [cloud provider configuration guide](https://docs.nvidia.com/nvsentinel/configuration/janitor-provider/#cloud-provider-selection).
+
+### 4. Preflight (optional)
 
 Preflight tries to keep a job from ever landing on bad hardware. It runs as an active check, an init container in the workload pod, that confirms the node is ready before the job starts.
 
-Uncomment the `values-preflight-kube.yaml` line in the `FEATURES` array and rerun the command. This file adds support for Kubernetes' native gang scheduling (the `GenericWorkload` and `GangScheduling` feature gates need to be enabled by a cluster admin). Using a different scheduler instead? See the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery).
+Uncomment this flag:
+
+```bash
+--set global.preflight.enabled=true
+```
+
+This uses Kubernetes' native gang scheduling (the `GenericWorkload` and `GangScheduling` feature gates need to be enabled by a cluster admin). Using a different scheduler instead? See the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery).
 
 - **Label the namespaces that should run it.** It's opt-in per namespace, so nothing changes until you do this:
 
