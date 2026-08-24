@@ -365,6 +365,39 @@ catch either, because the chart has already coerced the value into a valid
 {{- end -}}
 
 {{/*
+Node-binding enforcement mode: "enforce" (default) rejects a violating
+request, "audit" records it and lets the request through. Consumed only by
+platform-connector's own ConfigMap; publishers do not need it.
+*/}}
+{{- define "nvsentinel.pcAuth.mode" -}}
+{{- $auth := ((.Values.global).platformConnectorAuth) | default dict -}}
+{{- $mode := $auth.mode | default "enforce" -}}
+{{- if not (kindIs "string" $mode) -}}
+{{- fail (printf "global.platformConnectorAuth.mode must be a string (\"enforce\" or \"audit\"), got %s %#v." (kindOf $mode) $mode) -}}
+{{- end -}}
+{{- if not (or (eq $mode "enforce") (eq $mode "audit")) -}}
+{{- fail (printf "global.platformConnectorAuth.mode must be \"enforce\" or \"audit\", got %q." $mode) -}}
+{{- end -}}
+{{- $mode -}}
+{{- end -}}
+
+{{/*
+Renders "true" when a validator that never reached a verdict (API server
+unreachable, or timed out) should fall back to node-local scope instead of
+rejecting the request; "" otherwise. Does not affect a rejected credential,
+which is always rejected. Consumed only by platform-connector's own
+ConfigMap.
+*/}}
+{{- define "nvsentinel.pcAuth.failOpenOnUnavailable" -}}
+{{- $auth := ((.Values.global).platformConnectorAuth) | default dict -}}
+{{- $failOpen := $auth.failOpenOnUnavailable | default false -}}
+{{- if not (kindIs "bool" $failOpen) -}}
+{{- fail (printf "global.platformConnectorAuth.failOpenOnUnavailable must be a boolean (true or false), got %s %#v." (kindOf $failOpen) $failOpen) -}}
+{{- end -}}
+{{- if $failOpen -}}true{{- end -}}
+{{- end -}}
+
+{{/*
 Audience the projected tokens are minted for and that platform-connector
 requires. Defined once: a token minted for one audience and checked against
 another is rejected at runtime with nothing in the rendered manifests to show

@@ -414,6 +414,15 @@ func TestNewNodeBindingInterceptor_Validation(t *testing.T) {
 			},
 			wantErr: "not a canonical Kubernetes username",
 		},
+		{
+			name: "unknown mode is rejected",
+			cfg: Config{
+				NodeName:  ownNode,
+				Validator: &stubValidator{},
+				Mode:      "warn",
+			},
+			wantErr: `mode must be "enforce" or "audit"`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -427,13 +436,80 @@ func TestNewNodeBindingInterceptor_Validation(t *testing.T) {
 }
 
 func TestNewNodeBindingInterceptor_AlwaysEnforces(t *testing.T) {
-	// There is no observe-only setting: an interceptor that is running is an
-	// interceptor that rejects.
+	// An interceptor built with no Mode set defaults to ModeEnforce and
+	// rejects. ModeAudit is opt-in; see TestNodeBinding_AuditMode.
 	in := events(otherNode)
 
 	_, err := run(t, Config{NodeName: ownNode}, context.Background(), in)
 
 	assert.Equal(t, codes.PermissionDenied, status.Code(err))
+}
+
+func TestNodeBinding_AuditMode(t *testing.T) {
+	// ModeAudit records the same violation it would have rejected under
+	// ModeEnforce, but lets the request through.
+	in := events(otherNode)
+	cfg := Config{NodeName: ownNode, Mode: ModeAudit}
+
+	counter := authViolations.WithLabelValues(reasonNodeMismatch)
+	before := testutil.ToFloat64(counter)
+
+	called, err := run(t, cfg, context.Background(), in)
+
+	require.NoError(t, err, "audit mode must not reject")
+	assert.True(t, called, "audit mode must still call the handler")
+	assert.Equal(t, before+1, testutil.ToFloat64(counter), "the violation must still be counted")
+	assert.Equal(t, []string{otherNode}, nodeNames(in), "audit mode must not rewrite the event")
+}
+
+func TestNodeBinding_AuditMode_RejectedTokenStillCountedAndLetThrough(t *testing.T) {
+	validator := &stubValidator{err: status.Error(codes.Unauthenticated, "token not authenticated")}
+	cfg := Config{NodeName: ownNode, Mode: ModeAudit, Validator: validator}
+
+	counter := authViolations.WithLabelValues(reasonTokenInvalid)
+	before := testutil.ToFloat64(counter)
+
+	called, err := run(t, cfg, ctxWithAuth("Bearer forged"), events(ownNode))
+
+	require.NoError(t, err, "audit mode must not reject an invalid credential either")
+	assert.True(t, called)
+	assert.Equal(t, before+1, testutil.ToFloat64(counter))
+}
+
+func TestNodeBinding_FailOpenOnUnavailable(t *testing.T) {
+	validator := &stubValidator{err: status.Error(codes.Unavailable, "api server unreachable")}
+	cfg := Config{NodeName: ownNode, Validator: validator, FailOpenOnUnavailable: true}
+
+	counter := authViolations.WithLabelValues(reasonValidatorUnavailable)
+	before := testutil.ToFloat64(counter)
+
+	called, err := run(t, cfg, ctxWithAuth("Bearer whatever"), events(ownNode))
+
+	require.NoError(t, err, "an unreachable validator must fail open to node-local scope, not reject")
+	assert.True(t, called)
+	assert.Equal(t, before+1, testutil.ToFloat64(counter), "the outage must still be counted")
+}
+
+func TestNodeBinding_FailOpenOnUnavailable_DoesNotWeakenInvalidCredentialCheck(t *testing.T) {
+	// A rejected credential says something about the caller and must still be
+	// rejected in enforce mode, even with FailOpenOnUnavailable set.
+	validator := &stubValidator{err: status.Error(codes.Unauthenticated, "token not authenticated")}
+	cfg := Config{NodeName: ownNode, Validator: validator, FailOpenOnUnavailable: true}
+
+	called, err := run(t, cfg, ctxWithAuth("Bearer forged"), events(ownNode))
+
+	assert.Equal(t, codes.Unauthenticated, status.Code(err))
+	assert.False(t, called)
+}
+
+func TestNodeBinding_FailOpenOnUnavailable_DefaultsToFailClosed(t *testing.T) {
+	validator := &stubValidator{err: status.Error(codes.Unavailable, "api server unreachable")}
+	cfg := Config{NodeName: ownNode, Validator: validator}
+
+	called, err := run(t, cfg, ctxWithAuth("Bearer whatever"), events(ownNode))
+
+	assert.Equal(t, codes.Unavailable, status.Code(err), "unavailable must still reject unless opted in")
+	assert.False(t, called)
 }
 
 func TestNewNodeBindingInterceptor_DuplicateAllowlistEntries(t *testing.T) {

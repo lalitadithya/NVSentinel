@@ -49,6 +49,22 @@ global:
     # configuration.
     enabled: true
 
+    # "enforce" rejects a request that violates the node-binding rule.
+    # "audit" validates every request and records the same violation counters
+    # by reason, but lets the request through instead of rejecting it. Run
+    # audit for a period, confirm platform_connector_auth_violations_total
+    # stays at zero for real traffic, then switch to enforce with evidence.
+    mode: enforce
+
+    # A validator that cannot reach a verdict (API server unreachable, or the
+    # call timed out) says nothing about the caller's credential — it is not
+    # evidence of a forged token. When true, that case falls back to
+    # node-local scope instead of rejecting the request, the same treatment
+    # an anonymous caller gets; a rejected credential (invalid or malformed
+    # token) is always rejected regardless of this setting. Defaults to
+    # false: fail closed, matching prior behavior.
+    failOpenOnUnavailable: false
+
     # Audience every publisher's projected token is minted for, and that
     # platform-connector requires TokenReview to echo back, so a token issued
     # for a different service is not accepted here. Node-local monitors (gpu,

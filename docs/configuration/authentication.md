@@ -15,6 +15,8 @@ platform-connector: who may submit health events, and about which node.
 global:
   platformConnectorAuth:
     enabled: true
+    mode: enforce
+    failOpenOnUnavailable: false
     audience: "platform-connector.nvsentinel.nvidia.com"
     tokenExpirationSeconds: 3600
     tokenMountPath: "/var/run/secrets/nvsentinel/platform-connector"
@@ -31,6 +33,35 @@ new images fails loudly instead of guessing whether authentication is required.
 
 Disabling this lets any caller that can reach the connector's socket submit an
 event naming any node. It is not a supported production configuration.
+
+### `mode`
+
+`enforce` (default) rejects a request that violates the node-binding rule.
+`audit` validates every request and increments the same
+`platform_connector_auth_violations_total` counters by reason, but lets the
+request through instead of rejecting it.
+
+Use `audit` to roll node-binding out against real traffic: run it for a
+period, confirm the violation counters stay at zero, then switch to `enforce`
+with evidence rather than finding out what it breaks in production. `audit`
+still requires `enabled: true` and a working validator — it changes what
+happens after a violation is detected, not whether requests are checked.
+
+### `failOpenOnUnavailable`
+
+Distinguishes a validator that never reached a verdict from one that reached
+a verdict and rejected the credential. `validator_unavailable` and
+`validator_timeout` (the API server was unreachable, or the call timed out)
+say nothing about the caller — they are not evidence of a forged token, only
+of the validator's own availability. `token_invalid` (a rejected or malformed
+credential) does say something about the caller and is always rejected under
+`mode: enforce`, regardless of this setting.
+
+Defaults to `false`: an unreachable validator rejects the request, matching
+behaviour prior to this setting's introduction. Set `true` to fall back to
+node-local scope instead — the same treatment an anonymous caller gets —
+so that a control-plane blip degrades publishers to their own node rather
+than blocking their health events outright.
 
 ### `audience`
 
@@ -107,8 +138,8 @@ cluster already uses.
 
 | Metric | Labels | Meaning |
 |---|---|---|
-| `platform_connector_auth_decisions_total` | `decision` = `node_local` \| `cross_node` | Scope granted to an accepted batch. |
-| `platform_connector_auth_violations_total` | `reason` (below) | Batches rejected by the interceptor. |
+| `platform_connector_auth_decisions_total` | `decision` = `node_local` \| `cross_node` | Scope granted to a batch. |
+| `platform_connector_auth_violations_total` | `reason` (below) | Batches that violated the node-binding rule. Under `mode: enforce` these are rejected; under `mode: audit` they are recorded but let through. |
 | `platform_connector_auth_node_claim_total` | `result` = `verified` \| `absent` | Whether the token carried a node claim. |
 
 `reason` values:
@@ -122,7 +153,7 @@ cluster already uses.
 | `missing_node_name` | An event carried no node name and none could be stamped. |
 | `token_invalid` | TokenReview rejected the token. |
 | `malformed_credentials` | The authorization header was duplicated, or did not use the Bearer scheme. A *completely absent* header is not a violation — that caller is accepted and pinned to the connector's node. |
-| `validator_unavailable` / `validator_timeout` / `validator_error` | The API server could not be reached, or returned no identity. |
+| `validator_unavailable` / `validator_timeout` / `validator_error` | The API server could not be reached, or returned no identity. With `failOpenOnUnavailable: true`, `validator_unavailable` and `validator_timeout` still increment this counter but fall back to node-local scope instead of rejecting the request. |
 
 A healthy cluster reports zero violations. A sustained non-zero
 `validator_unavailable` is an API-server problem, not a caller problem.
