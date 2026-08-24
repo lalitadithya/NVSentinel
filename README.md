@@ -109,7 +109,7 @@ Remediation builds on Protect, so uncomment all of Protect's flags plus these:
 
 NVSentinel will now reboot a faulty node automatically once it's cordoned and drained. This runs as a privileged job right on the node itself, so it works on day one with no credentials to set up, regardless of whether you're running on-prem or on a CSP. To reboot through your cloud provider's API instead, see the [cloud provider configuration guide](https://docs.nvidia.com/nvsentinel/configuration/janitor-provider/#cloud-provider-selection).
 
-### 4. Preflight (optional)
+### 3. Preflight (optional)
 
 Preflight tries to keep a job from ever landing on bad hardware. It runs as an active check, an init container in the workload pod, that confirms the node is ready before the job starts.
 
