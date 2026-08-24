@@ -44,8 +44,11 @@ request through instead of rejecting it.
 Use `audit` to roll node-binding out against real traffic: run it for a
 period, confirm the violation counters stay at zero, then switch to `enforce`
 with evidence rather than finding out what it breaks in production. `audit`
-still requires `enabled: true` and a working validator — it changes what
-happens after a violation is detected, not whether requests are checked.
+still requires `enabled: true`, and every request is still validated: a
+validator failure (including `validator_unavailable` and
+`validator_timeout`) is still recorded, it just no longer rejects the
+request. `audit` changes what happens after a violation is detected, not
+whether requests are checked.
 
 ### `failOpenOnUnavailable`
 

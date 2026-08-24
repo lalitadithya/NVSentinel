@@ -468,12 +468,12 @@ func initializeAuthInterceptor(
 
 	mode, err := authMode(config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse AuthMode: %w", err)
 	}
 
 	failOpenOnUnavailable, err := boolFromConfig(config, "AuthFailOpenOnUnavailable", false)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse AuthFailOpenOnUnavailable: %w", err)
 	}
 
 	interceptor, err := auth.NewNodeBindingInterceptor(auth.Config{

@@ -371,7 +371,16 @@ platform-connector's own ConfigMap; publishers do not need it.
 */}}
 {{- define "nvsentinel.pcAuth.mode" -}}
 {{- $auth := ((.Values.global).platformConnectorAuth) | default dict -}}
-{{- $mode := $auth.mode | default "enforce" -}}
+{{- /*
+`default` treats false, 0, "" and nil as empty, so `$auth.mode | default
+"enforce"` would silently accept a typo'd non-string value by defaulting it
+away instead of rejecting it. Check presence explicitly, then validate
+whatever was actually supplied.
+*/ -}}
+{{- $mode := "enforce" -}}
+{{- if hasKey $auth "mode" -}}
+{{- $mode = index $auth "mode" -}}
+{{- end -}}
 {{- if not (kindIs "string" $mode) -}}
 {{- fail (printf "global.platformConnectorAuth.mode must be a string (\"enforce\" or \"audit\"), got %s %#v." (kindOf $mode) $mode) -}}
 {{- end -}}
@@ -390,7 +399,15 @@ ConfigMap.
 */}}
 {{- define "nvsentinel.pcAuth.failOpenOnUnavailable" -}}
 {{- $auth := ((.Values.global).platformConnectorAuth) | default dict -}}
-{{- $failOpen := $auth.failOpenOnUnavailable | default false -}}
+{{- /*
+Same reasoning as nvsentinel.pcAuth.mode: `default` would treat an explicit
+0 as absent and silently coerce it to false rather than rejecting the wrong
+type, so presence is checked explicitly first.
+*/ -}}
+{{- $failOpen := false -}}
+{{- if hasKey $auth "failOpenOnUnavailable" -}}
+{{- $failOpen = index $auth "failOpenOnUnavailable" -}}
+{{- end -}}
 {{- if not (kindIs "bool" $failOpen) -}}
 {{- fail (printf "global.platformConnectorAuth.failOpenOnUnavailable must be a boolean (true or false), got %s %#v." (kindOf $failOpen) $failOpen) -}}
 {{- end -}}
