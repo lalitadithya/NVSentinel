@@ -121,11 +121,11 @@ Uncomment this flag:
 
 This uses Kubernetes' native gang scheduling (the `GenericWorkload` and `GangScheduling` feature gates need to be enabled by a cluster admin). Using a different scheduler instead? See the [gang discovery guide](https://docs.nvidia.com/nvsentinel/configuration/preflight/#gang-discovery).
 
-- **Label the namespaces that should run it.** It's opt-in per namespace, so nothing changes until you do this:
+**Label the namespaces that should run it.** It's opt-in per namespace, so nothing changes until you do this:
 
-  ```bash
-  kubectl label namespace <your-namespace> nvsentinel.nvidia.com/preflight=enabled
-  ```
+```bash
+kubectl label namespace <your-namespace> nvsentinel.nvidia.com/preflight=enabled
+```
 
 Verify it's running: submit a GPU pod in the labeled namespace, then check that preflight added its init containers.
 
