@@ -19,8 +19,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/nvidia/nvsentinel/store-client/pkg/client"
 	"github.com/nvidia/nvsentinel/store-client/pkg/datastore"
@@ -468,12 +467,12 @@ func normalizeHealthEvents(events []datastore.HealthEventWithStatus) {
 	}
 }
 
-// normalizeValue recursively converts MongoDB types (bson.M, primitive.D, primitive.A, etc.) to standard Go types
+// normalizeValue recursively converts MongoDB types (bson.M, bson.D, bson.A, etc.) to standard Go types
 func normalizeValue(v interface{}) interface{} {
 	switch val := v.(type) {
-	case primitive.D:
-		return normalizePrimitiveD(val)
-	case primitive.A:
+	case bson.D:
+		return normalizeD(val)
+	case bson.A:
 		return normalizeArray(val)
 	case map[string]interface{}:
 		return normalizeMap(val)
@@ -485,8 +484,8 @@ func normalizeValue(v interface{}) interface{} {
 	}
 }
 
-// normalizePrimitiveD converts primitive.D to map[string]interface{} and normalizes nested values
-func normalizePrimitiveD(val primitive.D) interface{} {
+// normalizeD converts bson.D to map[string]interface{} and normalizes nested values
+func normalizeD(val bson.D) interface{} {
 	bsonBytes, err := bson.Marshal(val)
 	if err != nil {
 		return val // Return as-is if marshal fails
@@ -517,7 +516,7 @@ func normalizeArray(arr interface{}) []interface{} {
 	var getValue func(int) interface{}
 
 	switch v := arr.(type) {
-	case primitive.A:
+	case bson.A:
 		length = len(v)
 		getValue = func(i int) interface{} { return v[i] }
 	case []interface{}:
