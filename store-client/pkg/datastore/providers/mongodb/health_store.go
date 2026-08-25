@@ -474,6 +474,12 @@ func normalizeValue(v interface{}) interface{} {
 		return normalizeD(val)
 	case bson.A:
 		return normalizeArray(val)
+	case bson.M:
+		// bson.M is a defined type, not an alias for map[string]interface{}, so it
+		// does not match the case below. The collection client sets
+		// DefaultDocumentM, which makes this the shape documents actually decode
+		// into -- without this case the whole value is returned un-normalized.
+		return normalizeMap(val)
 	case map[string]interface{}:
 		return normalizeMap(val)
 	case []interface{}:

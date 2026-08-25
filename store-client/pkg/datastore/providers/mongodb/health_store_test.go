@@ -476,6 +476,34 @@ func TestNormalizeValue(t *testing.T) {
 			},
 		},
 		{
+			// The collection client sets DefaultDocumentM, so documents decode
+			// into bson.M rather than bson.D. bson.M is a defined type, so it
+			// does not match the map[string]interface{} case.
+			name: "top-level bson.M with nested values",
+			input: bson.M{
+				"nodename": "test-node",
+				"metadata": bson.M{
+					"region": "us-west",
+				},
+				"nested_d": bson.D{{Key: "zone", Value: "a"}},
+				"items": bson.A{
+					bson.M{"name": "item1"},
+					bson.D{{Key: "name", Value: "item2"}},
+				},
+			},
+			expected: map[string]interface{}{
+				"nodename": "test-node",
+				"metadata": map[string]interface{}{
+					"region": "us-west",
+				},
+				"nested_d": map[string]interface{}{"zone": "a"},
+				"items": []interface{}{
+					map[string]interface{}{"name": "item1"},
+					map[string]interface{}{"name": "item2"},
+				},
+			},
+		},
+		{
 			name:     "primitive string",
 			input:    "test-string",
 			expected: "test-string",

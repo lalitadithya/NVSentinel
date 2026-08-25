@@ -1100,6 +1100,8 @@ func normalizeMongoTypes(doc map[string]interface{}) {
 }
 
 // normalizeValue converts a single value, handling MongoDB-specific types and nested structures
+//
+//nolint:cyclop // flat type switch: one independent branch per BSON type
 func normalizeValue(value interface{}) interface{} {
 	switch v := value.(type) {
 	case bson.DateTime:

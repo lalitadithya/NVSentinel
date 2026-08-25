@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 )
 
-func TestNewChangeStreamWatcher(t *testing.T) {
+func TestNewChangeStreamWatcher_InvalidTLSPaths_ReturnsClientOptsError(t *testing.T) {
 	t.Run("error in constructing client options", func(t *testing.T) {
 		mongoConfig := MongoDBConfig{
 			URI:        "mongodb://localhost:27017",
@@ -952,7 +952,7 @@ func TestCopyStructFields(t *testing.T) {
 	})
 }
 
-func TestGetCollectionClient(t *testing.T) {
+func TestGetCollectionClient_InvalidConfig_ReturnsError(t *testing.T) {
 	t.Run("error in constructing client options", func(t *testing.T) {
 		mongoConfig := MongoDBConfig{
 			URI:        "mongodb://localhost:27017",
