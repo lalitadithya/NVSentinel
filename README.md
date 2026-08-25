@@ -84,7 +84,7 @@ We recommend starting with monitoring, then enabling one step at a time as you g
 
 NVSentinel watches your GPUs and system logs and reports faults as Kubernetes node conditions. Nothing here can disrupt a workload, so it's the safe default to run anywhere while you get a feel for what it reports. The command above already does this; no extra flags needed.
 
-### 2a. Protect: cordon and drain
+### 2a. Protect: Cordon and drain
 
 Uncomment these flags:
 
