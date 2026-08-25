@@ -149,7 +149,8 @@ var (
 	authViolations = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "platform_connector_auth_violations_total",
 		Help: "Health event batches that violated the node-binding rule. Rejected under mode: enforce; " +
-			"recorded but allowed through under mode: audit, except missing_node_name, which is always rejected.",
+			"recorded but allowed through under mode: audit, except missing_node_name from a caller " +
+			"resolved to verified cross-node scope, which is always rejected.",
 	}, []string{"reason"})
 
 	// authNodeClaim tracks whether authenticated callers' tokens carried a node

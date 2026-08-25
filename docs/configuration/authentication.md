@@ -50,12 +50,16 @@ validator failure (including `validator_unavailable` and
 request. `audit` changes what happens after a violation is detected, not
 whether requests are checked.
 
-One rejection is not affected by `mode`: a cross-node caller's event with no
-node name (`missing_node_name`) is always rejected, in both `audit` and
-`enforce`. Nothing downstream can handle an empty node name, so forwarding
-that event would not be a useful preview of what `enforce` would do — it
-would just be an event `enforce` could never have produced, sitting in the
-datastore.
+One rejection is not affected by `mode`: an event with no node name from a
+caller resolved to **verified** cross-node scope (`missing_node_name`) is
+always rejected, in both `audit` and `enforce`. Nothing downstream can handle
+an empty node name, so forwarding that event would not be a useful preview of
+what `enforce` would do — it would just be an event `enforce` could never
+have produced, sitting in the datastore. This does not cover a caller that
+fell back to a **degraded** node-local scope under `failOpenOnUnavailable`:
+its identity was never verified as cross-node in the first place, so a blank
+name from it is stamped like any other node-local caller's — see
+[`failOpenOnUnavailable`](#failopenonunavailable).
 
 ### `failOpenOnUnavailable`
 
