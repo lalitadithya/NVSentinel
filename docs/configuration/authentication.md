@@ -68,23 +68,27 @@ credential) does say something about the caller and is always rejected under
 `mode: enforce`, regardless of this setting.
 
 Defaults to `false`: an unreachable validator rejects the request, matching
-behaviour prior to this setting's introduction. Set `true` to fall back to
-a **degraded** node-local scope instead — a guess, not a verified identity —
+behaviour before this setting existed. Set `true` to fall back to a
+**degraded** node-local scope instead — a guess, not a verified identity —
 so that a control-plane blip degrades publishers to their own node rather
 than blocking their health events outright:
 
 - An event with a blank or matching node name is accepted and stamped exactly
-  as a verified node-local caller's would be. This is the common case the
-  setting exists for: most publishers present a token but leave the node name
-  blank for platform-connector to fill in.
-- An event naming a *different* node is refused as retryable `Unavailable` —
-  the same code the validator itself returned — rather than as
-  `node_mismatch` / `PermissionDenied`. The caller might really be an
-  allowlisted cross-node publisher the outage prevented from being verified,
-  not an actual mismatch, so it is not counted as `node_mismatch` (one of the
-  reasons an operator would alert on as suspected credential abuse) and not
-  rejected in a way publishers treat as non-retryable; it is retried once the
-  validator recovers instead of being dropped for good.
+  as a verified node-local caller's would be, in either `mode`. This is the
+  common case the setting exists for: most publishers present a token but
+  leave the node name blank for platform-connector to fill in.
+- An event naming a *different* node is handled according to `mode`. Under
+  `mode: enforce` it is refused as retryable `Unavailable` — the same code
+  the validator itself returned — rather than as `node_mismatch` /
+  `PermissionDenied`. The caller might really be an allowlisted cross-node
+  publisher the outage prevented from being verified, not an actual mismatch,
+  so it is not counted as `node_mismatch` (one of the reasons an operator
+  would alert on as suspected credential abuse) and not rejected in a way
+  publishers treat as non-retryable; it is retried once the validator
+  recovers instead of being dropped for good. Under `mode: audit` that same
+  `Unavailable` is what gets recorded and then let through by `auditOrReject`
+  like any other violation, so the event is forwarded with whatever node name
+  it carried.
 
 ### `audience`
 

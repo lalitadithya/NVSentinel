@@ -284,11 +284,14 @@ anything is surfaced. Past that the connector **fails closed** with
 `global.platformConnectorAuth.failOpenOnUnavailable: true` changes this: the
 caller falls back to a degraded node-local scope instead of being rejected —
 an outage says nothing about the caller's credential — with a blank or
-matching node name accepted and stamped as usual, and an event naming a
-different node kept retryable rather than silently accepted or counted as a
-mismatch. See [Authentication Configuration](configuration/authentication.md)
-for the detail. Tokenless callers never trigger a TokenReview at all, so
-custom monitors keep working with no API-server dependency whatsoever.
+matching node name accepted and stamped as usual in either `mode`. An event
+naming a different node is where `mode` matters: under `mode: enforce` (the
+default) it is kept retryable rather than silently accepted or counted as a
+mismatch; under `mode: audit` that same outcome is recorded and then let
+through like any other audited violation, so the event is forwarded as-is.
+See [Authentication Configuration](configuration/authentication.md) for the
+detail. Tokenless callers never trigger a TokenReview at all, so custom
+monitors keep working with no API-server dependency whatsoever.
 
 #### Configuration
 
