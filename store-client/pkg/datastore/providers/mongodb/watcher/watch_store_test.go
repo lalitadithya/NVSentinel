@@ -15,6 +15,7 @@
 package watcher
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -367,6 +368,55 @@ func TestConstructMongoClientOptions_NoTLS(t *testing.T) {
 	if opts.Auth != nil {
 		t.Fatal("Expected nil auth when TLS is disabled")
 	}
+}
+
+// TestConstructMongoClientOptions_BSONOptions_PreserveV1DecodeShape guards the two
+// driver v1 -> v2 decode behaviour changes this package depends on:
+//
+//   - DefaultDocumentM: v2 decodes nested documents into bson.D; callers here
+//     type-assert bson.M.
+//   - ObjectIDAsHexString: v2 refuses to decode an ObjectID into a Go string, which
+//     breaks structs binding `bson:"_id"` to a string field (e.g. the latest-event
+//     lookup in fault-quarantine's CancelLatestQuarantiningEvents). Losing this
+//     silently turns manual-uncordon cancellation into a no-op.
+func TestConstructMongoClientOptions_BSONOptions_PreserveV1DecodeShape(t *testing.T) {
+	mongoConfig := MongoDBConfig{
+		URI:                      "mongodb://localhost:27017",
+		Database:                 "test",
+		Collection:               "test",
+		TotalPingTimeoutSeconds:  5,
+		TotalPingIntervalSeconds: 1,
+	}
+
+	opts, err := constructMongoClientOptions(mongoConfig)
+	require.NoError(t, err)
+	require.NotNil(t, opts.BSONOptions, "BSON options must be set")
+	require.True(t, opts.BSONOptions.DefaultDocumentM, "DefaultDocumentM must stay enabled")
+	require.True(t, opts.BSONOptions.ObjectIDAsHexString, "ObjectIDAsHexString must stay enabled")
+}
+
+// TestObjectIDDecodesIntoStringField documents the underlying driver behaviour the
+// option above compensates for: without it, decoding _id into a string fails.
+func TestObjectIDDecodesIntoStringField(t *testing.T) {
+	oid := bson.NewObjectID()
+
+	raw, err := bson.Marshal(bson.M{"_id": oid})
+	require.NoError(t, err)
+
+	var target struct {
+		ID string `bson:"_id"`
+	}
+
+	// Default v2 decoder: this is the failure seen in CI.
+	err = bson.Unmarshal(raw, &target)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "decoding an object ID into a string is not supported by default")
+
+	// With ObjectIDAsHexString the same document decodes to the hex string.
+	dec := bson.NewDecoder(bson.NewDocumentReader(bytes.NewReader(raw)))
+	dec.ObjectIDAsHexString()
+	require.NoError(t, dec.Decode(&target))
+	require.Equal(t, oid.Hex(), target.ID)
 }
 
 func TestConstructMongoClientOptions_DynamicClientCertificateUsesX509Auth(t *testing.T) {

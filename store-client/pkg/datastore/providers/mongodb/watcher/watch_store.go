@@ -755,7 +755,15 @@ func constructMongoClientOptions(
 		// mirrored the ancestor type and produced bson.M. Change stream events and
 		// query results are read as bson.M and their nested fields are type-asserted
 		// as such throughout this package, so keep the v1 shape.
-		SetBSONOptions(&options.BSONOptions{DefaultDocumentM: true}).
+		//
+		// ObjectIDAsHexString likewise restores v1 behaviour: v2 refuses to decode
+		// an ObjectID into a Go string ("decoding an object ID into a string is not
+		// supported by default"), which breaks structs that bind `bson:"_id"` to a
+		// string field.
+		SetBSONOptions(&options.BSONOptions{
+			DefaultDocumentM:    true,
+			ObjectIDAsHexString: true,
+		}).
 		SetMonitor(otelmongo.NewMonitor(
 			otelmongo.WithTracerProvider(tracing.GetChildOnlyTracerProvider()),
 		))
