@@ -280,9 +280,15 @@ authenticated caller stays accepted for up to two minutes after its token
 expires or its pod is deleted. An unreachable API server is
 **retried inside the call** with exponential backoff for a few seconds before
 anything is surfaced. Past that the connector **fails closed** with
-`Unavailable`, which every publisher treats as retryable; tokenless callers
-never trigger a TokenReview at all, so custom monitors keep working with no
-API-server dependency whatsoever.
+`Unavailable` by default, which every publisher treats as retryable.
+`global.platformConnectorAuth.failOpenOnUnavailable: true` changes this: the
+caller falls back to a degraded node-local scope instead of being rejected —
+an outage says nothing about the caller's credential — with a blank or
+matching node name accepted and stamped as usual, and an event naming a
+different node kept retryable rather than silently accepted or counted as a
+mismatch. See [Authentication Configuration](configuration/authentication.md)
+for the detail. Tokenless callers never trigger a TokenReview at all, so
+custom monitors keep working with no API-server dependency whatsoever.
 
 #### Configuration
 
@@ -296,10 +302,15 @@ allowlist and the publishers' projected tokens cannot drift apart:
 | `tokenExpirationSeconds` | `3600` | Token lifetime. Must be a whole number in `600 <= x <= 2^32`; Kubernetes rejects anything else. |
 | `tokenMountPath` | `/var/run/secrets/nvsentinel/platform-connector` | Where publishers mount the token. |
 | `crossNodeServiceAccounts` | `[]` | **Additional** fully-qualified usernames allowed to name other nodes. The bundled monitors are derived from the release namespace for whichever are enabled — do not list them here. |
+| `mode` | `enforce` | `enforce` rejects a violating request. `audit` validates every request and still increments `platform_connector_auth_violations_total` by reason, but lets the request through instead of rejecting it — use it to roll node-binding out against real traffic, confirm the violation counters stay at zero, then switch to `enforce` with evidence. One exception applies in both modes: a cross-node caller's event with no node name is always rejected, since nothing downstream can handle it. |
+| `failOpenOnUnavailable` | `false` | When `true`, a validator that never reached a verdict (the API server was unreachable, or the call timed out) falls back to a degraded node-local scope instead of rejecting the request, since an outage says nothing about the caller's credential. A rejected credential (an invalid or malformed token) is always rejected regardless of this setting. |
 
-There is no `mode` and no `requireNodeClaim`. A setting that is "on but
-not enforcing" cannot be reasoned about from its configuration alone, so
-enforcement is not separable from enablement.
+There is no `requireNodeClaim`: whether a claim is checked is not
+configurable, only what happens after a violation is found (`mode`) and how an
+unavailable validator is treated (`failOpenOnUnavailable`). See
+[Authentication Configuration](configuration/authentication.md) for the full
+detail on both, including how a degraded scope treats a blank vs. a
+differently-named node.
 
 A **custom cluster-scoped monitor** needs three things: a projected token volume
 with the configured audience, its token path passed to the client dial, and its
@@ -384,7 +395,7 @@ Related metrics:
 | Metric | Labels | Meaning |
 |--------|--------|---------|
 | `platform_connector_auth_decisions_total` | `decision` | Batches by granted scope (`node_local`, `cross_node`) |
-| `platform_connector_auth_violations_total` | `reason` | Batches rejected by the interceptor |
+| `platform_connector_auth_violations_total` | `reason` | Batches that violated the node-binding rule. Rejected under `mode: enforce`; recorded but let through under `mode: audit`, except `missing_node_name`, which is always rejected. |
 | `platform_connector_auth_node_claim_total` | `result` | Whether the token carried a node claim (`verified`, `absent`) |
 
 Not every `reason` means a caller was rejected. `validator_unavailable`,

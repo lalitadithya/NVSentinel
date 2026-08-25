@@ -490,6 +490,69 @@ func TestNodeBinding_FailOpenOnUnavailable(t *testing.T) {
 	assert.Equal(t, before+1, testutil.ToFloat64(counter), "the outage must still be counted")
 }
 
+func TestNodeBinding_FailOpenOnUnavailable_ForeignNodeNameIsRetryableNotPermissionDenied(t *testing.T) {
+	// A degraded scope is a guess, not a verified identity: the caller might
+	// really be an allowlisted cross-node publisher the outage prevented from
+	// being verified. Rejecting it as node_mismatch/PermissionDenied would be
+	// both wrong (every publisher treats PermissionDenied as non-retryable, so
+	// the batch would be dropped for good) and misleading (node_mismatch is
+	// the reason METRICS.md tells operators to alert on as suspected
+	// credential abuse).
+	validator := &stubValidator{err: status.Error(codes.Unavailable, "api server unreachable")}
+	cfg := Config{NodeName: ownNode, Validator: validator, FailOpenOnUnavailable: true}
+
+	mismatchCounter := authViolations.WithLabelValues(reasonNodeMismatch)
+	beforeMismatch := testutil.ToFloat64(mismatchCounter)
+
+	called, err := run(t, cfg, ctxWithAuth("Bearer whatever"), events(otherNode))
+
+	assert.Equal(t, codes.Unavailable, status.Code(err),
+		"an event naming another node during an outage must stay retryable, not become PermissionDenied")
+	assert.False(t, called)
+	assert.Equal(t, beforeMismatch, testutil.ToFloat64(mismatchCounter),
+		"a degraded guess must not be counted as node_mismatch")
+}
+
+func TestNodeBinding_FailOpenOnUnavailable_BlankNodeNameIsStillStamped(t *testing.T) {
+	// The common case this fallback exists for: an ordinary node-local
+	// publisher whose blank node name gets filled in exactly as it would
+	// under a verified node-local scope.
+	validator := &stubValidator{err: status.Error(codes.Unavailable, "api server unreachable")}
+	cfg := Config{NodeName: ownNode, Validator: validator, FailOpenOnUnavailable: true}
+
+	in := events("")
+
+	called, err := run(t, cfg, ctxWithAuth("Bearer whatever"), in)
+
+	require.NoError(t, err)
+	assert.True(t, called)
+	assert.Equal(t, []string{ownNode}, nodeNames(in))
+}
+
+func TestNodeBinding_AuditMode_CrossNodeCallerBlankNodeNameStillRejected(t *testing.T) {
+	// A blank node name from a cross-node caller produces an event nothing
+	// downstream can handle. ModeEnforce could never accept it intact, so
+	// ModeAudit must not forward it either — this is the one rejection that
+	// stays enforced regardless of Mode.
+	validator := &stubValidator{identities: map[string]string{"good": crossSA}}
+	cfg := Config{
+		NodeName:                 ownNode,
+		Validator:                validator,
+		CrossNodeServiceAccounts: []string{crossSA},
+		Mode:                     ModeAudit,
+	}
+
+	counter := authViolations.WithLabelValues(reasonMissingNodeName)
+	before := testutil.ToFloat64(counter)
+
+	called, err := run(t, cfg, ctxWithAuth("Bearer good"), events(""))
+
+	assert.Equal(t, codes.InvalidArgument, status.Code(err),
+		"a structurally-broken event must be rejected even in audit mode")
+	assert.False(t, called)
+	assert.Equal(t, before+1, testutil.ToFloat64(counter))
+}
+
 func TestNodeBinding_FailOpenOnUnavailable_DoesNotWeakenInvalidCredentialCheck(t *testing.T) {
 	// A rejected credential says something about the caller and must still be
 	// rejected in enforce mode, even with FailOpenOnUnavailable set.

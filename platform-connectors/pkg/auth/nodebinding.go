@@ -322,16 +322,35 @@ func (b *nodeBinder) intercept(
 		return handler(ctx, req)
 	}
 
-	callerScope, err := b.resolveScope(ctx)
+	callerScope, degraded, err := b.resolveScope(ctx)
 	if err := b.auditOrReject(ctx, err); err != nil {
 		return nil, err
 	}
 
 	authDecisions.WithLabelValues(callerScope.String()).Inc()
 
+	// A blank node name from a cross-node caller produces an event nothing
+	// downstream can handle, in every Mode: not something audit mode can
+	// usefully let through, so it is enforced unconditionally rather than
+	// through auditOrReject. See requireNodeNames.
+	if err := b.requireNodeNames(ctx, events, callerScope); err != nil {
+		return nil, err
+	}
+
 	// Validate the entire batch before mutating any of it, so a rejected batch
-	// leaves no partially-stamped events behind.
-	if err := b.auditOrReject(ctx, b.validateBatch(ctx, events, callerScope)); err != nil {
+	// leaves no partially-stamped events behind. A degraded (fail-open) scope
+	// is a guess, not a verified identity, so it gets the more conservative,
+	// retryable check — see validateDegradedBatch — instead of validateBatch,
+	// which would otherwise record a node_mismatch violation as a side effect
+	// even though its result is about to be replaced.
+	var validateErr error
+	if degraded {
+		validateErr = b.validateDegradedBatch(ctx, events)
+	} else {
+		validateErr = b.validateBatch(ctx, events, callerScope)
+	}
+
+	if err := b.auditOrReject(ctx, validateErr); err != nil {
 		return nil, err
 	}
 
@@ -365,23 +384,26 @@ func isValidatorUnavailable(reason string) bool {
 }
 
 // resolveScope authenticates the caller and returns the node scope it is
-// entitled to. It fails closed: on any authentication error the returned scope
-// is node-local and the error is non-nil, so the caller is rejected rather than
-// having a cross-node claim silently downgraded to an unverified one. The one
+// entitled to, and whether that scope is degraded: a fallback guess made
+// without a verdict from the validator, rather than a verified identity. It
+// fails closed: on any authentication error the returned scope is node-local
+// and the error is non-nil, so the caller is rejected rather than having a
+// cross-node claim silently downgraded to an unverified one. The one
 // exception is a validator that never reached a verdict: when
 // FailOpenOnUnavailable is set, that case falls back to node-local scope with
-// no error, the same treatment an anonymous caller gets, because an outage
-// says nothing about the caller's credential.
-func (b *nodeBinder) resolveScope(ctx context.Context) (scope, error) {
+// no error but degraded set, because an outage says nothing about the
+// caller's credential. Callers that get a degraded scope back must treat it
+// as unverified — see validateDegradedBatch.
+func (b *nodeBinder) resolveScope(ctx context.Context) (scope, bool, error) {
 	token, present, err := grpcauth.BearerTokenFromContext(ctx)
 	if err != nil {
 		b.recordViolation(reasonMalformedCreds)
 
-		return scopeNodeLocal, err
+		return scopeNodeLocal, false, err
 	}
 
 	if !present {
-		return scopeNodeLocal, nil
+		return scopeNodeLocal, false, nil
 	}
 
 	identity, err := b.validator.Authenticate(ctx, token)
@@ -390,13 +412,13 @@ func (b *nodeBinder) resolveScope(ctx context.Context) (scope, error) {
 		b.recordViolation(reason)
 
 		if b.failOpenOnUnavailable && isValidatorUnavailable(reason) {
-			slog.WarnContext(ctx, "Validator unavailable; failing open to node-local scope rather than "+
-				"rejecting the caller", "reason", reason, "error", err)
+			slog.WarnContext(ctx, "Validator unavailable; failing open to a degraded node-local scope "+
+				"rather than rejecting the caller", "reason", reason, "error", err)
 
-			return scopeNodeLocal, nil
+			return scopeNodeLocal, true, nil
 		}
 
-		return scopeNodeLocal, err
+		return scopeNodeLocal, false, err
 	}
 
 	// TokenValidator is an interface, so the non-nil-on-success contract cannot
@@ -407,30 +429,30 @@ func (b *nodeBinder) resolveScope(ctx context.Context) (scope, error) {
 	if identity == nil {
 		b.recordViolation(reasonValidatorError)
 
-		return scopeNodeLocal, status.Error(codes.Internal, "token validation returned no identity")
+		return scopeNodeLocal, false, status.Error(codes.Internal, "token validation returned no identity")
 	}
 
 	// Provenance first: a replayed token is refused whatever its holder is
 	// entitled to say.
 	if err := b.verifyNodeClaim(ctx, identity); err != nil {
-		return scopeNodeLocal, err
+		return scopeNodeLocal, false, err
 	}
 
 	if _, ok := b.crossNode[identity.Username]; ok {
 		if err := b.requireVerifiedNode(ctx, identity); err != nil {
-			return scopeNodeLocal, err
+			return scopeNodeLocal, false, err
 		}
 
 		slog.DebugContext(ctx, "Caller granted cross-node scope",
 			"user", identity.Username, "pod", identity.PodName, "tokenNode", identity.NodeName)
 
-		return scopeCrossNode, nil
+		return scopeCrossNode, false, nil
 	}
 
 	slog.DebugContext(ctx, "Caller scoped to this node",
 		"user", identity.Username, "pod", identity.PodName, "nodeName", b.nodeName)
 
-	return scopeNodeLocal, nil
+	return scopeNodeLocal, false, nil
 }
 
 // verifyNodeClaim answers the provenance question: was this token presented on
@@ -523,26 +545,52 @@ func (b *nodeBinder) requireVerifiedNode(ctx context.Context, identity *grpcauth
 	return nil
 }
 
-// validateBatch checks every event against the caller's scope without mutating
-// anything, and reports the first violation found.
-func (b *nodeBinder) validateBatch(ctx context.Context, events *pb.HealthEvents, callerScope scope) error {
+// requireNodeNames rejects a cross-node batch containing a blank node name, in
+// every Mode.
+//
+// A cross-node publisher is expected to name nodes explicitly, so a blank
+// name from one is a bug in that publisher, not a scope decision — stamping
+// our own node here would attribute another node's fault to this one, and
+// forwarding the blank name produces an event nothing downstream can handle
+// (the store keeps it as-is, fault-quarantine's node lookup on an empty name
+// fails, and the k8s connector drops the whole batch without retrying).
+// ModeAudit exists to preview what ModeEnforce would reject without losing
+// events; an event ModeEnforce could never accept intact is not something
+// audit mode can usefully forward, so this check is not routed through
+// auditOrReject the way validateBatch is.
+func (b *nodeBinder) requireNodeNames(ctx context.Context, events *pb.HealthEvents, callerScope scope) error {
+	if callerScope != scopeCrossNode {
+		return nil
+	}
+
 	for i, event := range events.GetEvents() {
-		nodeName := event.GetNodeName()
-
-		if callerScope == scopeCrossNode {
-			// A cross-node publisher is expected to name nodes explicitly, so a
-			// blank name from one is a bug in that publisher. Stamping our own
-			// node here would attribute another node's fault to this one.
-			if nodeName == "" {
-				b.recordViolation(reasonMissingNodeName)
-
-				return status.Errorf(codes.InvalidArgument,
-					"event %d: nodeName is required for cross-node publishers (agent=%s)",
-					i, event.GetAgent())
-			}
-
+		if event.GetNodeName() != "" {
 			continue
 		}
+
+		b.recordViolation(reasonMissingNodeName)
+		slog.ErrorContext(ctx, "Rejecting cross-node event with no node name",
+			"agent", event.GetAgent(), "checkName", event.GetCheckName())
+
+		return status.Errorf(codes.InvalidArgument,
+			"event %d: nodeName is required for cross-node publishers (agent=%s)",
+			i, event.GetAgent())
+	}
+
+	return nil
+}
+
+// validateBatch checks every node-local event against the caller's own node
+// without mutating anything, and reports the first violation found. Cross-node
+// callers have nothing left to check here: their only batch-level rule is
+// requireNodeNames, enforced unconditionally before this runs.
+func (b *nodeBinder) validateBatch(ctx context.Context, events *pb.HealthEvents, callerScope scope) error {
+	if callerScope != scopeNodeLocal {
+		return nil
+	}
+
+	for i, event := range events.GetEvents() {
+		nodeName := event.GetNodeName()
 
 		if nodeName != "" && nodeName != b.nodeName {
 			b.recordViolation(reasonNodeMismatch)
@@ -558,6 +606,44 @@ func (b *nodeBinder) validateBatch(ctx context.Context, events *pb.HealthEvents,
 					"(cross-node reporting requires an allowlisted service account token)",
 				i, b.nodeName, nodeName)
 		}
+	}
+
+	return nil
+}
+
+// validateDegradedBatch is the check used in place of validateBatch when the
+// caller's scope is degraded — a fallback guess made because
+// FailOpenOnUnavailable let the request continue without a verdict from the
+// validator, not a verified identity.
+//
+// An event naming a node other than this connector's own might be a
+// legitimate cross-node publisher the outage prevented from being verified,
+// not an actual mismatch, so it is refused as retryable Unavailable — the
+// same code the validator itself returned — rather than as node_mismatch /
+// PermissionDenied. That distinction matters twice over: every publisher
+// treats PermissionDenied as non-retryable, so labelling a guess that way
+// would drop the batch for good instead of letting it retry once the
+// validator recovers; and node_mismatch is one of the reasons METRICS.md
+// tells operators to alert on as suspected credential abuse, so mislabelling
+// an outage that way would make a routine control-plane blip look like an
+// attack. A blank node name is not treated specially here: it gets the same
+// stamp-to-this-node treatment a verified node-local caller's blank name
+// would, which is the common case this fallback exists for.
+func (b *nodeBinder) validateDegradedBatch(ctx context.Context, events *pb.HealthEvents) error {
+	for i, event := range events.GetEvents() {
+		nodeName := event.GetNodeName()
+		if nodeName == "" || nodeName == b.nodeName {
+			continue
+		}
+
+		slog.WarnContext(ctx, "Rejecting event naming another node while the token validator is "+
+			"unavailable; scope cannot be verified until it recovers",
+			"claimedNodeName", nodeName, "connectorNodeName", b.nodeName,
+			"agent", event.GetAgent(), "checkName", event.GetCheckName())
+
+		return status.Errorf(codes.Unavailable,
+			"event %d: cannot verify whether this caller may name node %q while the token validator is "+
+				"unavailable; retry once it recovers", i, nodeName)
 	}
 
 	return nil

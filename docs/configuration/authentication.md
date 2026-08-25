@@ -50,6 +50,13 @@ validator failure (including `validator_unavailable` and
 request. `audit` changes what happens after a violation is detected, not
 whether requests are checked.
 
+One rejection is not affected by `mode`: a cross-node caller's event with no
+node name (`missing_node_name`) is always rejected, in both `audit` and
+`enforce`. Nothing downstream can handle an empty node name, so forwarding
+that event would not be a useful preview of what `enforce` would do — it
+would just be an event `enforce` could never have produced, sitting in the
+datastore.
+
 ### `failOpenOnUnavailable`
 
 Distinguishes a validator that never reached a verdict from one that reached
@@ -62,9 +69,22 @@ credential) does say something about the caller and is always rejected under
 
 Defaults to `false`: an unreachable validator rejects the request, matching
 behaviour prior to this setting's introduction. Set `true` to fall back to
-node-local scope instead — the same treatment an anonymous caller gets —
+a **degraded** node-local scope instead — a guess, not a verified identity —
 so that a control-plane blip degrades publishers to their own node rather
-than blocking their health events outright.
+than blocking their health events outright:
+
+- An event with a blank or matching node name is accepted and stamped exactly
+  as a verified node-local caller's would be. This is the common case the
+  setting exists for: most publishers present a token but leave the node name
+  blank for platform-connector to fill in.
+- An event naming a *different* node is refused as retryable `Unavailable` —
+  the same code the validator itself returned — rather than as
+  `node_mismatch` / `PermissionDenied`. The caller might really be an
+  allowlisted cross-node publisher the outage prevented from being verified,
+  not an actual mismatch, so it is not counted as `node_mismatch` (one of the
+  reasons an operator would alert on as suspected credential abuse) and not
+  rejected in a way publishers treat as non-retryable; it is retried once the
+  validator recovers instead of being dropped for good.
 
 ### `audience`
 
@@ -156,7 +176,7 @@ cluster already uses.
 | `missing_node_name` | An event carried no node name and none could be stamped. |
 | `token_invalid` | TokenReview rejected the token. |
 | `malformed_credentials` | The authorization header was duplicated, or did not use the Bearer scheme. A *completely absent* header is not a violation — that caller is accepted and pinned to the connector's node. |
-| `validator_unavailable` / `validator_timeout` / `validator_error` | The API server could not be reached, or returned no identity. With `failOpenOnUnavailable: true`, `validator_unavailable` and `validator_timeout` still increment this counter but fall back to node-local scope instead of rejecting the request. |
+| `validator_unavailable` / `validator_timeout` / `validator_error` | The API server could not be reached, or returned no identity. With `failOpenOnUnavailable: true`, `validator_unavailable` and `validator_timeout` still increment this counter but fall back to a degraded node-local scope instead of rejecting the request — see [`failOpenOnUnavailable`](#failopenonunavailable) for how that scope treats a blank vs. a differently-named node. |
 
 A healthy cluster reports zero violations. A sustained non-zero
 `validator_unavailable` is an API-server problem, not a caller problem.
