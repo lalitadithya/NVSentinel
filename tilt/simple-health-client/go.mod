@@ -1,8 +1,6 @@
 module simple-health-client
 
-go 1.26.0
-
-toolchain go1.26.3
+go 1.27.0
 
 require (
 	github.com/nvidia/nvsentinel/commons v0.0.0

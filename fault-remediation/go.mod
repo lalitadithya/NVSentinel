@@ -1,8 +1,6 @@
 module github.com/nvidia/nvsentinel/fault-remediation
 
-go 1.26.0
-
-toolchain go1.26.3
+go 1.27.0
 
 require (
 	github.com/go-logr/logr v1.4.4

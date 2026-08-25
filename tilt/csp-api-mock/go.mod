@@ -14,9 +14,7 @@
 
 module csp-api-mock
 
-go 1.26.0
-
-toolchain go1.26.3
+go 1.27.0
 
 require (
 	cloud.google.com/go/logging v1.19.1

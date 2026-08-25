@@ -1,8 +1,6 @@
 module github.com/nvidia/nvsentinel/metadata-collector
 
-go 1.26.0
-
-toolchain go1.26.3
+go 1.27.0
 
 require (
 	github.com/NVIDIA/go-nvml v0.13.3-1

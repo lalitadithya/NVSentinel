@@ -1,8 +1,6 @@
 module github.com/nvidia/nvsentinel/demos/local-custom-remediation-demo/memory-pressure-monitor
 
-go 1.26.0
-
-toolchain go1.26.3
+go 1.27.0
 
 require (
 	github.com/nvidia/nvsentinel/data-models v0.0.0
