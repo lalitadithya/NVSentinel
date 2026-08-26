@@ -611,9 +611,7 @@ func TestClassifier_ConcurrentUseFromBothPollingLoops(t *testing.T) {
 	var wg sync.WaitGroup
 
 	for range 4 {
-
 		wg.Go(func() {
-
 			for range 100 {
 				for _, d := range devices {
 					c.RoleOf(d)
@@ -625,7 +623,6 @@ func TestClassifier_ConcurrentUseFromBothPollingLoops(t *testing.T) {
 	}
 
 	wg.Go(func() {
-
 		for range 20 {
 			c.LogClassificationSummary()
 		}

@@ -292,7 +292,6 @@ func runTest(
 
 	for range numWorkers {
 		wg.Go(func() {
-
 			for nodeName := range workCh {
 				// Random stagger within window
 				if maxStagger > 0 {

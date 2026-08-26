@@ -43,7 +43,6 @@ func RandString(n int) string {
 // (`+kubebuilder:validation`) on the GPUReset CRD.
 
 var _ = Describe("GPUReset Validation", func() {
-
 	Context("When creating a GPUReset resource", func() {
 		const (
 			TestNodeName      = "test-node-1"

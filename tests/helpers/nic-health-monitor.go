@@ -370,7 +370,7 @@ func runShellPodOnNode(t *testing.T, ctx context.Context,
 				Name: "host-run",
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: fakeSysfsHostBase,
-					Type: hostPathType(corev1.HostPathDirectoryOrCreate),
+					Type: new(corev1.HostPathDirectoryOrCreate),
 				},
 			}},
 		},
@@ -404,9 +404,6 @@ func runShellPodOnNode(t *testing.T, ctx context.Context,
 		return false
 	}, EventuallyWaitTimeout, WaitInterval, "%s pod should complete", namePrefix)
 }
-
-//go:fix inline
-func hostPathType(t corev1.HostPathType) *corev1.HostPathType { return new(t) }
 
 // clearNICConditions sends healthy events for both NIC check types
 // through the platform connector, clearing any stale conditions.

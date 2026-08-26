@@ -85,7 +85,6 @@ func startActiveMonitorAndLog(
 	}
 
 	wg.Go(func() {
-
 		slog.Info("Starting active monitor", "name", activeMonitor.GetName())
 
 		monitorErr := activeMonitor.StartMonitoring(ctx, eventChan)
@@ -193,7 +192,6 @@ func run() error {
 		startActiveMonitorAndLog(gCtx, &wg, activeMonitor, eventChan)
 
 		wg.Go(func() {
-
 			runEventProcessorLoop(gCtx, eventChan, eventProcessor)
 			slog.Info("Event processing loop stopped.")
 		})

@@ -467,7 +467,6 @@ func (d *XidBurstDetector) isStickyXidContinuation(event XidEvent, previousEvent
 
 	// Check if there's a sticky XID within stickyWindow (20 seconds) before this one
 	for _, prev := range slices.Backward(previousEvents) {
-
 		timeDiff := event.timestamp.Sub(prev.timestamp)
 
 		if timeDiff > d.stickyWindow {

@@ -697,7 +697,6 @@ var _ = Describe("GPUReset Controller", func() {
 		})
 
 		It("should NOT remove pre-existing env vars when adding GPU ID env var", func() {
-
 			By("Configuring container with env var")
 			customTemplate := reconciler.Config.ResolvedJobTemplate.DeepCopy()
 			customTemplate.Spec.Template.Spec.Containers = []corev1.Container{

@@ -496,9 +496,9 @@ func (b *SQLFilterBuilder) fieldToJSONBPath(field string) string {
 		fieldName := b.convertFieldName(parts[i])
 
 		if i == len(parts)-1 {
-			path.WriteString(fmt.Sprintf("->>'%s'", fieldName))
+			fmt.Fprintf(&path, "->>'%s'", fieldName)
 		} else {
-			path.WriteString(fmt.Sprintf("->'%s'", fieldName))
+			fmt.Fprintf(&path, "->'%s'", fieldName)
 		}
 	}
 

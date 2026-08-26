@@ -640,20 +640,20 @@ func (r *K8sConnector) constructHealthEventMessage(healthEvent *protos.HealthEve
 	var message strings.Builder
 
 	for _, errorCode := range healthEvent.ErrorCode {
-		message.WriteString(fmt.Sprintf("ErrorCode:%s ", errorCode))
+		fmt.Fprintf(&message, "ErrorCode:%s ", errorCode)
 	}
 
 	for _, entity := range healthEvent.EntitiesImpacted {
-		message.WriteString(fmt.Sprintf("%s:%s ", entity.EntityType, entity.EntityValue))
+		fmt.Fprintf(&message, "%s:%s ", entity.EntityType, entity.EntityValue)
 	}
 
 	if healthEvent.Message != "" {
 		// Replace semicolons with dots in the message to prevent delimiter collision
 		sanitizedMessage := strings.ReplaceAll(healthEvent.Message, ";", ".")
-		message.WriteString(fmt.Sprintf("%s ", sanitizedMessage))
+		fmt.Fprintf(&message, "%s ", sanitizedMessage)
 	}
 
-	message.WriteString(fmt.Sprintf("Recommended Action=%s;", healthEvent.RecommendedAction.String()))
+	fmt.Fprintf(&message, "Recommended Action=%s;", healthEvent.RecommendedAction.String())
 
 	return message.String()
 }

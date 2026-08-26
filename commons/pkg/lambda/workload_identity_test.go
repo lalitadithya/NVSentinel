@@ -226,9 +226,7 @@ func TestWorkloadIdentity_ConcurrentColdCacheRequests_MintsTokenOnce(t *testing.
 	var wg sync.WaitGroup
 
 	for range 16 {
-
 		wg.Go(func() {
-
 			token, err := w.token(context.Background())
 			assert.NoError(t, err)
 			assert.Equal(t, "minted-key", token)
