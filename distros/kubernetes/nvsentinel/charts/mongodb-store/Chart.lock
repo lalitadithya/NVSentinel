@@ -7,6 +7,6 @@ dependencies:
   version: 1.23.0
 - name: psmdb-db
   repository: ""
-  version: 1.23.0
-digest: sha256:18ddfe22ed713aefe09bed08b0a25b386b82920457b2459886a6b4ff93749acd
-generated: "2026-08-25T12:47:25.798892519+05:30"
+  version: 1.21.1
+digest: sha256:00f827cd582163e80ead1e2ac1aab0d9be9a0858068be5bd80e363a3f6c2c3b1
+generated: "2026-08-26T18:04:25.087331806+05:30"
