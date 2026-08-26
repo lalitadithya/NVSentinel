@@ -84,10 +84,7 @@ func startActiveMonitorAndLog(
 		return
 	}
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 
 		slog.Info("Starting active monitor", "name", activeMonitor.GetName())
 
@@ -102,7 +99,7 @@ func startActiveMonitorAndLog(
 		} else {
 			slog.Info("Monitor shut down cleanly", "name", activeMonitor.GetName())
 		}
-	}()
+	})
 }
 
 func run() error {
@@ -195,14 +192,11 @@ func run() error {
 
 		startActiveMonitorAndLog(gCtx, &wg, activeMonitor, eventChan)
 
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 
 			runEventProcessorLoop(gCtx, eventChan, eventProcessor)
 			slog.Info("Event processing loop stopped.")
-		}()
+		})
 
 		wg.Wait()
 		slog.Info("CSP monitor and event processor stopped.")

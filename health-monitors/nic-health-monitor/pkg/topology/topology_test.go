@@ -610,31 +610,26 @@ func TestClassifier_ConcurrentUseFromBothPollingLoops(t *testing.T) {
 
 	var wg sync.WaitGroup
 
-	for g := 0; g < 4; g++ {
-		wg.Add(1)
+	for range 4 {
 
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 
-			for i := 0; i < 100; i++ {
+			for range 100 {
 				for _, d := range devices {
 					c.RoleOf(d)
 					c.IsManagementNIC(d)
 					c.PCICardOf(d)
 				}
 			}
-		}()
+		})
 	}
 
-	wg.Add(1)
+	wg.Go(func() {
 
-	go func() {
-		defer wg.Done()
-
-		for i := 0; i < 20; i++ {
+		for range 20 {
 			c.LogClassificationSummary()
 		}
-	}()
+	})
 
 	wg.Wait()
 }
