@@ -9,8 +9,15 @@ metadata:
   namespace: {{ include "psmdb-database.namespace" . }}
   labels:
 {{ include "psmdb-database.labels" . | indent 4 }}
+  {{- /* NVSentinel local patch (PR #1230), not present upstream: keep this guard when
+         re-vendoring the chart. We set `finalizers: []`, which renders an empty list that
+         the apiserver strips, leaving the PerconaServerMongoDB CR perpetually OutOfSync in
+         ArgoCD. Setting `finalizers: null` instead is not a safe substitute: on Helm 3.16
+         (bundled with ArgoCD 2.14) it silently restores Percona's default finalizer. */}}
+  {{- if .Values.finalizers }}
   finalizers:
 {{ .Values.finalizers | toYaml | indent 4 }}
+  {{- end }}
 spec:
   crVersion: {{ .Values.crVersion }}
   pause: {{ .Values.pause }}
