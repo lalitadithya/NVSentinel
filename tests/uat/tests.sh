@@ -720,8 +720,6 @@ test_xid_monitoring_syslog() {
     fi
     log "Node event verified: XID 13 is non-fatal, appears in events ✓"
 
-    exit 1
-
     log "Injecting XID 79 via /dev/kmsg on pod: $NODE_NS/$NODE_POD"
     kubectl exec -n "$NODE_NS" "$NODE_POD" -- sh -c 'echo "<3>[6085126.134786] NVRM: Xid (PCI:0002:00:00): 79, pid=1582259, name=nvc:[driver], GPU has fallen off the bus." > /dev/kmsg'
 
