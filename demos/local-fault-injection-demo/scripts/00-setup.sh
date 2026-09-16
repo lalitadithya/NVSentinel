@@ -112,8 +112,7 @@ deploy_fake_dcgm() {
 
     log "The image carries the NVIDIA stack and runs to a few GB, so the first pull is slow."
 
-    if ! kubectl wait --for=condition=ready pod -l app=nvidia-dcgm \
-        -n "$DCGM_NAMESPACE" --timeout="${PULL_TIMEOUT}s" >/dev/null 2>&1; then
+    if ! wait_for_pod_ready "$DCGM_NAMESPACE" app=nvidia-dcgm "$PULL_TIMEOUT"; then
         kubectl get pods -n "$DCGM_NAMESPACE"
         fail "The fake DCGM pod did not become ready within ${PULL_TIMEOUT}s. If it is still pulling, raise PULL_TIMEOUT and re-run."
     fi
@@ -165,7 +164,7 @@ await_dcgm_connectivity() {
     wait_until 300 "gpu-health-monitor to report a healthy DCGM connection" \
         dcgm_connected "$NODE" ||
         fail "gpu-health-monitor never reported a healthy DCGM connection.
-Condition: $(node_condition_status "$NODE" GpuDcgmConnectivityFailure || echo absent)
+Condition: $(node_condition_status "$NODE" GpuDcgmConnectivityFailure | grep . || echo absent)
 Check the monitor:  kubectl logs -n $NAMESPACE -l app.kubernetes.io/name=gpu-health-monitor --tail=50"
 
     echo

@@ -62,9 +62,13 @@ reboot_requests() {
 
 has_reboot_request() { [[ -n "$(reboot_requests)" ]]; }
 
+# Note the explicit query check: a failed API call must not be read as "the
+# workload is no longer there", which would let the wait succeed on an error.
 workload_evicted() {
-    ! kubectl get pods -n "$WORKLOAD_NAMESPACE" -l "app=${WORKLOAD_NAME}" \
-        -o jsonpath='{.items[*].spec.nodeName}' 2>/dev/null | grep -q "$NODE"
+    local nodes
+    nodes="$(kubectl get pods -n "$WORKLOAD_NAMESPACE" -l "app=${WORKLOAD_NAME}" \
+        -o jsonpath='{.items[*].spec.nodeName}')" || return 1
+    [[ " $nodes " != *" $NODE "* ]]
 }
 
 detect() {
@@ -112,7 +116,7 @@ remediate() {
 Check fault-remediation:  kubectl logs -n $NAMESPACE deployment/fault-remediation --tail=50"
 
     wait_until "$REMEDIATE_TIMEOUT" "janitor to finish the reboot" reached_state remediation-succeeded ||
-        warn "The node has not reached remediation-succeeded yet (state: $(node_state)).
+        fail "The node did not reach remediation-succeeded within ${REMEDIATE_TIMEOUT}s (state: $(node_state)).
 Check janitor:  kubectl logs -n $NAMESPACE deployment/janitor --tail=50"
 
     echo

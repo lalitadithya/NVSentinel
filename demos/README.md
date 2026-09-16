@@ -57,7 +57,7 @@ Run these locally on your laptop — no GPU hardware needed.
 
 **What it shows:** The full pipeline — GPU fault detection, node quarantine, workload drain, repair request, and automatic recovery
 
-**Requirements:** Docker, kubectl, kind, helm, jq - **no GPU hardware needed**
+**Requirements:** Docker, kubectl, kind, helm, jq, curl - **no GPU hardware needed**
 
 **Time:** 10-15 minutes
 

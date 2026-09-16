@@ -115,6 +115,32 @@ node_condition_status() {
             '.status.conditions[]? | select(.type == $type) | .status'
 }
 
+# Waits for a pod matching the selector to exist, then for it to be Ready.
+#
+# The existence poll is not redundant: `kubectl wait` resolves the selector once,
+# up front, and exits immediately with "no matching resources found" if nothing
+# matches yet. Its --timeout never covers the gap between creating a DaemonSet
+# and its controller creating the pod, so waiting on readiness alone is a race.
+#   wait_for_pod_ready <namespace> <selector> <timeout-seconds>
+wait_for_pod_ready() {
+    local namespace=${1:?wait_for_pod_ready requires a namespace}
+    local selector=${2:?wait_for_pod_ready requires a selector}
+    local timeout=${3:?wait_for_pod_ready requires a timeout}
+    local deadline=$((SECONDS + timeout))
+
+    while ((SECONDS < deadline)); do
+        if [[ -n "$(kubectl get pods -n "$namespace" -l "$selector" \
+            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)" ]]; then
+            kubectl wait --for=condition=ready pod -l "$selector" \
+                -n "$namespace" --timeout="$((deadline - SECONDS))s" >/dev/null 2>&1
+            return
+        fi
+        sleep 2
+    done
+
+    return 1
+}
+
 # Resolves the NVSentinel Helm chart version to install.
 #
 # NVSENTINEL_CHART_VERSION pins it. Otherwise the highest semver tag published

@@ -243,7 +243,7 @@ See the [demos directory](demos/) for full descriptions.
 Want to try NVSentinel without GPU hardware? Run our **[Local Fault Injection Demo](demos/local-fault-injection-demo/README.md)**:
 
 - 🚀 **Runs on a laptop** - entirely in a local KIND cluster
-- 🔍 **The whole pipeline** - fault detection → quarantine → drain → repair → recovery, with a workload running throughout
+- 🔍 **The whole pipeline** - a running workload is drained off a faulty node, the node is repaired, and the workload is rescheduled once it returns
 - 🎯 **No GPU required** - uses simulated DCGM for testing
 
 ```bash

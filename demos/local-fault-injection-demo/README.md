@@ -47,7 +47,7 @@ The same three stages the [project README](../../README.md) describes, watched o
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
-Every module reads from and writes to the datastore. None of them calls another directly, which is why each one can be enabled, disabled or replaced on its own.
+The core modules coordinate only through the datastore — none of them calls another — which is why each can be enabled, disabled or replaced on its own. The one direct hop is at the edge: a health monitor hands its events to the platform-connectors instance on its own node over a Unix socket, which is what puts them in the datastore in the first place.
 
 ## Prerequisites
 
@@ -82,7 +82,7 @@ To read what happens at each stage, run the steps yourself instead:
 ./scripts/99-cleanup.sh            # delete the cluster
 ```
 
-Each script is independent and can be re-run.
+These are ordered stages, not independent scripts: step 2 needs the cluster and DCGM pod that step 0 builds, and step 3 needs the fault step 2 injects. Run them in order. Any one of them can be re-run as long as the earlier stages still hold — re-running step 3 after it has already completed, for instance, just re-checks a node that is already drained.
 
 ## What Happens at Each Step
 
