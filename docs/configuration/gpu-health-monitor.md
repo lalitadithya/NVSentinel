@@ -25,6 +25,7 @@ An externally managed hostengine runs on each GPU node. GPU Health Monitor pods 
 - The hostengine lifecycle is managed outside NVSentinel
 - No Kubernetes service needed
 - GPU Health Monitor enables host networking automatically
+- You label each GPU node with its [DCGM version](#dcgm-version-node-label) before you install
 
 ### Embedded Mode
 
@@ -35,6 +36,7 @@ GPU Health Monitor starts an in-process DCGM hostengine and exposes it to pod-lo
 - `gpu-health-monitor.runtimeClassName` must name the cluster's NVIDIA RuntimeClass
 - The chart automatically sets `privileged: true` on the GPU Health Monitor container
 - The endpoint must be `localhost`, `127.0.0.1`, or `::1`
+- You label each GPU node with its [DCGM version](#dcgm-version-node-label) before you install
 
 ## DCGM Version Selection
 
@@ -120,6 +122,8 @@ global:
 
 GPU Health Monitor enables host networking automatically in this mode.
 
+This mode does not set the [DCGM version node label](#dcgm-version-node-label) for you. Label every GPU node before you install, or no monitor pod schedules.
+
 ### Embedded Mode
 
 ```yaml
@@ -135,6 +139,46 @@ gpu-health-monitor:
 ```
 
 `runtimeClassName` is required and must match an NVIDIA RuntimeClass installed in the cluster. The chart automatically sets the GPU Health Monitor container to privileged in embedded mode so the NVIDIA Container Toolkit can provide GPU and driver access; no separate security-context value is required.
+
+This mode does not set the [DCGM version node label](#dcgm-version-node-label) for you. Label every GPU node before you install, or no monitor pod schedules.
+
+### DCGM Version Node Label
+
+GPU Health Monitor ships one DaemonSet per DCGM major version. Each DaemonSet selects nodes with the `nvsentinel.dgxc.nvidia.com/dcgm.version` label, so every node gets the monitor image that matches its DCGM. All three modes render this `nodeSelector`, but only `operator-service` supplies the label for you.
+
+| Mode | Who sets the label |
+|---|---|
+| `operator-service` | Labeler, from the GPU Operator DCGM pod image |
+| `external-hostengine` | You, before you install NVSentinel |
+| `embedded-mode` | You, before you install NVSentinel |
+
+In `external-hostengine` and `embedded-mode` there is no DCGM pod for labeler to read, so labeler cannot derive the version. Selecting either mode automatically configures labeler to keep a valid label that already exists, so nothing removes the label you set. Labeler never creates it.
+
+An unlabeled node runs no GPU Health Monitor pod, and nothing reports an error. The DaemonSet stays healthy because Kubernetes never schedules a pod it can reject. GPU health monitoring is silently absent on that node.
+
+Label every GPU node with its DCGM major version. The only accepted values are `3.x` and `4.x`; labeler treats any other value as absent.
+
+```bash
+# One node
+kubectl label node <node-name> nvsentinel.dgxc.nvidia.com/dcgm.version=4.x
+
+# Many nodes at once, using a selector that identifies your GPU nodes
+kubectl label node -l nvidia.com/gpu.present=true nvsentinel.dgxc.nvidia.com/dcgm.version=4.x
+```
+
+The `nvidia.com/gpu.present` label comes from Node Feature Discovery, which the GPU Operator installs. Substitute your own selector if you run neither, which is common in `embedded-mode`.
+
+Confirm a monitor pod now runs on each labeled node:
+
+```bash
+kubectl get pods -n nvsentinel -l app.kubernetes.io/name=gpu-health-monitor -o wide
+```
+
+Compare that count against the nodes that carry the label:
+
+```bash
+kubectl get nodes -L nvsentinel.dgxc.nvidia.com/dcgm.version
+```
 
 ### Host Networking Override
 
