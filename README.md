@@ -55,6 +55,8 @@ NVSENTINEL_VERSION=v1.23.0
 
 kubectl create namespace nvsentinel --dry-run=client -o yaml | kubectl apply -f -
 
+# Fresh datastore only. If a MongoDB volume already exists without this Secret,
+# recover the original password instead — a new one locks NVSentinel out of that data.
 kubectl get secret mongodb -n nvsentinel >/dev/null 2>&1 || kubectl create secret generic mongodb -n nvsentinel \
   --from-literal=mongodb-root-password="$(openssl rand -hex 24)"
 
@@ -102,7 +104,7 @@ Uncomment these flags:
 NVSentinel will now cordon a faulty node, so your scheduler stops placing new work on it, and drain its existing workloads. Only want to cordon, without draining yet? Drop the `nodeDrainer` line above. This is as far as NVSentinel goes unless you also enable remediation below; a cordoned (and optionally drained) node stays isolated until you (or your own tooling) repair it.
 
 > [!NOTE]
-> **Small/Demo cluster? Disable the circuit breaker.** Fault quarantine ships a breaker that stops NVSentinel from cordoning more than 50% of your cluster at once. A tripped breaker pauses all event processing, including uncordoning a recovered node.
+> **Small/Demo cluster? Disable the circuit breaker.** Fault quarantine ships a breaker that trips once the nodes cordoned in a 5 minute window reach 50% of the nodes count. A tripped breaker pauses all event processing, including uncordoning a recovered node.
 >
 > ```bash
 > --set fault-quarantine.circuitBreaker.enabled=false   # test and demo clusters only

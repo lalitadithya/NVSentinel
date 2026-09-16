@@ -62,14 +62,26 @@ The chart reads the `mongodb` Secret during template rendering, which happens be
 The Secret must match the credentials already written into the database volume. Creating a new one over a live database locks NVSentinel out of its own data. Confirm both of these return nothing:
 
 ```bash
-# 1. An existing credentials Secret. If this exists, keep it and skip to the upgrade.
-kubectl get secret mongodb -n nvsentinel
+# 1. A usable credentials Secret. Prints "present" only when the key exists and is
+#    non-empty; it never prints the password itself.
+kubectl get secret mongodb -n nvsentinel -o jsonpath='{.data.mongodb-root-password}' 2>/dev/null \
+  | grep -q . && echo "present" || echo "missing or empty"
 
 # 2. Existing database volumes. If any exist, a database was deployed before.
 kubectl get pvc -n nvsentinel -l app.kubernetes.io/name=mongodb
 ```
 
-If either returns a result, do not create the Secret. A Secret without a volume is safe to reuse as is. A volume without a Secret means the original credentials are lost; recover them from your backup, or follow the [migration runbook](../runbooks/mongodb-bitnami-to-percona-migration.md) to redeploy the datastore.
+The Secret existing is not enough. The chart fails the same way when `mongodb-root-password` is absent or empty, so check the key rather than the object.
+
+Read the results together:
+
+| Key present | Volumes | What to do |
+|---|---|---|
+| no | none | Fresh datastore. Create the Secret below. |
+| yes | any | Keep the Secret as is and go straight to the upgrade. |
+| no | one or more | **Stop.** The volume holds credentials you no longer have. Creating a new Secret locks NVSentinel out of that data. |
+
+For the last row, recover the original password from your backup, or follow the [migration runbook](../runbooks/mongodb-bitnami-to-percona-migration.md) to redeploy the datastore and carry the health event data over.
 
 ### Create the Secret
 

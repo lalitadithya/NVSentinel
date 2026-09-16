@@ -131,7 +131,7 @@ Port for the Janitor's internal HTTP server (health and readiness endpoints).
 
 ## Node Exclusions
 
-Prevents specific nodes from being targeted by any Janitor operation.
+Stops new `RebootNode`, `TerminateNode`, and `GPUReset` CRs from being created for the matching nodes.
 
 ```yaml
 janitor:
@@ -182,7 +182,13 @@ node 'control-plane-1' is excluded from janitor operations due to a label on the
 
 The check runs server-side on the API request, so it applies to every client, and `force: true` does not bypass it. Because it matches on labels read at admission time, relabelling a node changes what is excluded without a Janitor restart.
 
-Use this for control-plane nodes, infrastructure nodes, or any node that must never be rebooted or terminated by NVSentinel.
+Admission is the only place exclusions are enforced. The controllers do not re-check them while reconciling, so a CR admitted before you added the exclusion, or before you labelled the node, still runs to completion. After you add an exclusion, check for CRs that are already in flight for those nodes:
+
+```bash
+kubectl get rebootnodes,terminatenodes,gpuresets -A
+```
+
+Use this for control-plane nodes, infrastructure nodes, or any node that NVSentinel should not reboot or terminate.
 
 ## Controllers
 

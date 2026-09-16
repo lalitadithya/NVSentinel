@@ -248,7 +248,7 @@ Remember that resetting the breaker does not uncordon anything. It only lets fau
 - No. The circuit breaker requires manual intervention to reset. It will remain in the TRIPPED state indefinitely until you reset it and restart the deployment. See [Resetting the Circuit Breaker](#resetting-the-circuit-breaker).
 
 **Q: The node reports healthy, but it is still cordoned. Why?**
-- A tripped breaker halts every health event, including the healthy event that would uncordon the node. Platform connectors still clears the node condition, which is why the node looks recovered while it stays cordoned. Reset the breaker, then uncordon the node. See [Health status, event processing, and schedulability are separate](#health-status-event-processing-and-schedulability-are-separate).
+- A tripped breaker halts every health event, including the healthy event that would uncordon the node. Platform connectors still clears the node condition, which is why the node looks recovered while it stays cordoned. Uncordon the recovered nodes first, then reset the breaker, following the [runbook](./runbooks/circuit-breaker.md) in that order: a `RESUME` reset replays the events that accumulated while tripped, so fault quarantine can act on those nodes before you finish the manual cleanup. See [Health status, event processing, and schedulability are separate](#health-status-event-processing-and-schedulability-are-separate).
 
 **Q: My single-node test cluster tripped the breaker on the first fault**
 - Expected at any percentage: one cordoned node is the whole fleet. Disable the breaker on single-node clusters. See [Small clusters](#small-clusters).

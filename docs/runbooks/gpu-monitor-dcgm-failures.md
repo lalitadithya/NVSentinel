@@ -82,13 +82,19 @@ dcgmi discovery -l --host nvidia-dcgm.gpu-operator.svc:5555   # operator-service
 dcgmi discovery -l --host localhost:5555                      # external-hostengine or embedded-mode
 ```
 
-In `embedded-mode` the monitor starts the hostengine in-process and exposes it on pod-local loopback, so `dcgmi` inside this pod reaches that same engine. A failure here means the engine did not start, not that a network hop broke.
+In `embedded-mode` the monitor starts the hostengine in-process and exposes it on pod-local loopback, so `dcgmi` inside this pod reaches that same engine. A failure here is node-local rather than a broken network hop, but it does not by itself say which part failed: the hostengine may not have started, or it started and cannot reach the GPUs because the driver, RuntimeClass, or container runtime is not giving the pod device access. The checks below separate the two.
 
 If `dcgmi` produces no output at all and cannot be interrupted with Ctrl-C, stop here and go to [Unresponsive DCGM](#unresponsive-dcgm) — the probe is hung rather than unreachable, and every further query will hang the same way.
 
 If DCGM commands fail, check the items for your mode:
 
-- **`operator-service`** — DCGM service exists (`kubectl get svc -n gpu-operator | grep dcgm`); the DCGM pod is running on the same node; network policies allow traffic from the nvsentinel namespace to the gpu-operator namespace.
+- **`operator-service`** — DCGM service exists (`kubectl get svc -n gpu-operator | grep dcgm`); network policies allow traffic from the nvsentinel namespace to the gpu-operator namespace. Whether the DCGM pod must be on the *same* node depends on how the service routes:
+
+  ```bash
+  kubectl get svc -n gpu-operator nvidia-dcgm -o jsonpath='{.spec.internalTrafficPolicy}{"\n"}'
+  ```
+
+  With `Local`, each monitor reaches only the DCGM pod on its own node, so a missing or unready DCGM pod there is the fault. With `Cluster` or unset, the service load-balances across nodes, so connectivity can succeed while the monitor reads another node's GPUs — check every DCGM pod rather than just the one co-located with the failing monitor. Leave [`connectivityFailureEscalationThreshold`](../configuration/gpu-health-monitor.md#connectivityfailureescalationthreshold) at `0` in that topology: escalating to a node reboot is not a valid response to a shared service or network fault.
 - **`external-hostengine`** — `nv-hostengine` is running on the node and listening on the configured port; the monitor pod has `hostNetwork: true`; a host firewall does not block the port.
 - **`embedded-mode`** — `runtimeClassName` names the cluster's NVIDIA RuntimeClass; the container is privileged; `nvidia-smi -L` inside the pod lists the GPUs. Without GPU and driver injection the embedded engine cannot start.
 
@@ -121,7 +127,19 @@ Every GPU node needs `nvsentinel.dgxc.nvidia.com/dcgm.version` set to `3.x` or `
 
 Which mode you run decides whether that is a bug or the expected setup step:
 
-- **`operator-service`** — labeler derives the label from the GPU Operator DCGM pod image. A missing label means labeler cannot see a DCGM pod on that node. Check that the GPU Operator DCGM pod is running there, then check labeler's logs: `kubectl logs -n nvsentinel deployment/labeler | grep -i dcgm`.
+- **`operator-service`** — labeler derives the label from the GPU Operator DCGM pod image. A missing label means labeler could not read a usable DCGM pod for that node, which is not the same as the pod being absent. Check in this order:
+
+  ```bash
+  # Is a DCGM pod scheduled on the node, and is it Ready?
+  kubectl get pods -n gpu-operator -l app=nvidia-dcgm -o wide | grep {NODE_NAME}
+
+  # Has the node completed DCGM bootstrap?
+  kubectl get node {NODE_NAME} -o jsonpath='{.metadata.annotations.nvsentinel\.dgxc\.nvidia\.com/dcgm-bootstrap-completed}{"\n"}'
+
+  kubectl logs -n nvsentinel deployment/labeler | grep -i dcgm
+  ```
+
+  `requireDCGMReadyForBootstrap` defaults to `true`, so on a node bootstrapping for the first time labeler withholds the label until the DCGM pod reports Ready. A pod stuck `Running` but not Ready produces exactly this symptom. Once the bootstrap annotation is written, labeler sets the label regardless of later readiness. See [labeler](../labeler.md).
 - **`external-hostengine` and `embedded-mode`** — there is no DCGM pod, so labeler cannot derive the version and never creates the label. You supply it. See [DCGM Version Node Label](../configuration/gpu-health-monitor.md#dcgm-version-node-label).
 
 Also check that the node is not opted out. Labeler removes its detection labels from a node labeled `nvsentinel.dgxc.nvidia.com/managed=false`:

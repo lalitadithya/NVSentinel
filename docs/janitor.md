@@ -65,7 +65,7 @@ janitor:
   config:
     manualMode: false     # Set to true to skip Provider calls; requires human approval
     nodes:
-      exclusions:         # Label selectors for nodes the Janitor will never act on
+      exclusions:         # Label selectors; matching nodes are refused new Janitor CRs
         - matchLabels:
             node-role.kubernetes.io/control-plane: ""
         - matchLabels:

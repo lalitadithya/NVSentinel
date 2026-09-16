@@ -152,7 +152,9 @@ GPU Health Monitor ships one DaemonSet per DCGM major version. Each DaemonSet se
 | `external-hostengine` | You, before you install NVSentinel |
 | `embedded-mode` | You, before you install NVSentinel |
 
-In `external-hostengine` and `embedded-mode` there is no DCGM pod for labeler to read, so labeler cannot derive the version. Selecting either mode automatically configures labeler to keep a valid label that already exists, so nothing removes the label you set. Labeler never creates it.
+In `external-hostengine` and `embedded-mode` there is no DCGM pod for labeler to read, so labeler cannot derive the version. Selecting either mode automatically configures labeler to keep a valid label that already exists. Labeler never creates it.
+
+One case still removes the label: a node labelled `nvsentinel.dgxc.nvidia.com/managed=false` is opted out of NVSentinel management, and labeler strips all of its detection labels from that node, `dcgm.version` included. This applies in every source mode. Clear the opt-out before you label the node.
 
 An unlabeled node runs no GPU Health Monitor pod, and nothing reports an error. The DaemonSet stays healthy because Kubernetes never schedules a pod it can reject. GPU health monitoring is silently absent on that node.
 
@@ -162,11 +164,13 @@ Label every GPU node with its DCGM major version. The only accepted values are `
 # One node
 kubectl label node <node-name> nvsentinel.dgxc.nvidia.com/dcgm.version=4.x
 
-# Many nodes at once, using a selector that identifies your GPU nodes
-kubectl label node -l nvidia.com/gpu.present=true nvsentinel.dgxc.nvidia.com/dcgm.version=4.x
+# Many nodes at once. Label each DCGM version separately, using a selector that
+# matches only the nodes running that version.
+kubectl label node -l <your-4.x-selector> nvsentinel.dgxc.nvidia.com/dcgm.version=4.x
+kubectl label node -l <your-3.x-selector> nvsentinel.dgxc.nvidia.com/dcgm.version=3.x
 ```
 
-The `nvidia.com/gpu.present` label comes from Node Feature Discovery, which the GPU Operator installs. Substitute your own selector if you run neither, which is common in `embedded-mode`.
+Do not label every GPU node with one version. A node labelled `4.x` while running DCGM 3.x gets the 4.x monitor image, which then fails against the hostengine it finds. If your fleet is genuinely uniform, `nvidia.com/gpu.present=true` is a usable selector — it comes from Node Feature Discovery, which the GPU Operator installs. Substitute your own selector if you run neither, which is common in `embedded-mode`.
 
 Confirm a monitor pod now runs on each labeled node:
 
