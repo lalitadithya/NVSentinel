@@ -242,13 +242,13 @@ See the [demos directory](demos/) for full descriptions.
 
 Want to try NVSentinel without GPU hardware? Run our **[Local Fault Injection Demo](demos/local-fault-injection-demo/README.md)**:
 
-- 🚀 **5-minute setup** - runs entirely in a local KIND cluster
-- 🔍 **Real pipeline** - see fault detection → quarantine → node cordon
+- 🚀 **Runs on a laptop** - entirely in a local KIND cluster
+- 🔍 **The whole pipeline** - fault detection → quarantine → drain → repair → recovery, with a workload running throughout
 - 🎯 **No GPU required** - uses simulated DCGM for testing
 
 ```bash
 cd demos/local-fault-injection-demo
-make demo  # Automated: creates cluster, installs NVSentinel, injects fault, verifies cordon
+./demo.sh  # Creates the cluster, installs NVSentinel, breaks a GPU, and watches it recover
 ```
 
 ## Supported GPUs

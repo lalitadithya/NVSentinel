@@ -55,13 +55,13 @@ Run these locally on your laptop — no GPU hardware needed.
 
 ### [Local Fault Injection Demo](local-fault-injection-demo/)
 
-**What it shows:** GPU failure detection and automated node quarantine
+**What it shows:** The full pipeline — GPU fault detection, node quarantine, workload drain, repair request, and automatic recovery
 
-**Requirements:** Docker, kubectl, kind, helm - **no GPU hardware needed**
+**Requirements:** Docker, kubectl, kind, helm, jq - **no GPU hardware needed**
 
-**Time:** 5-10 minutes
+**Time:** 10-15 minutes
 
-**Best for:** Understanding how NVSentinel detects hardware failures and automatically protects your cluster by cordoning faulty nodes.
+**Best for:** Seeing what NVSentinel actually does end to end. A workload is running when the GPU breaks, and you watch it get moved off, the node repaired, and the node returned to service with nothing typed in between.
 
 ### [Local Slinky Drain Demo](local-slinky-drain-demo/)
 
