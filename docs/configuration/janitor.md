@@ -140,16 +140,53 @@ janitor:
       exclusions: []
 ```
 
-Provide a list of node names to exclude:
+Each entry is a Kubernetes [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors), not a node name. Use `matchLabels`, `matchExpressions`, or both. A node that matches **any** entry is excluded.
 
 ```yaml
 janitor:
   config:
     nodes:
       exclusions:
-        - control-plane-node-1
-        - infra-node-2
+        # Every control-plane node
+        - matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+
+        # One specific node, selected through its hostname label
+        - matchLabels:
+            kubernetes.io/hostname: gpu-node-07
+
+        # Any node in a critical or production tier
+        - matchExpressions:
+            - key: workload-tier
+              operator: In
+              values:
+                - critical
+                - production
 ```
+
+A list of bare node names does not render. Helm reads `matchLabels` on each entry, so plain strings stop the install:
+
+```text
+can't evaluate field matchLabels in type interface {}
+```
+
+To exclude one node, select it through the `kubernetes.io/hostname` label that kubelet sets on every node. Read the value first, because it does not always match the node's object name:
+
+```bash
+kubectl get node gpu-node-07 -o jsonpath='{.metadata.labels.kubernetes\.io/hostname}'
+```
+
+One list covers all three controllers: RebootNode, TerminateNode, and GPUReset.
+
+### How exclusions are enforced
+
+A validating admission webhook compares the node's labels against every exclusion when a Janitor CR is created, and rejects the request on the first match:
+
+```text
+node 'control-plane-1' is excluded from janitor operations due to a label on the node matching the label exclusion 'node-role.kubernetes.io/control-plane=' from config value global.nodes.exclusions
+```
+
+The check runs server-side on the API request, so it applies to every client, and `force: true` does not bypass it. Because it matches on labels read at admission time, relabelling a node changes what is excluded without a Janitor restart.
 
 Use this for control-plane nodes, infrastructure nodes, or any node that must never be rebooted or terminated by NVSentinel.
 
