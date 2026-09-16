@@ -45,6 +45,49 @@ Do **NOT** switch backends by changing the two flags on a live release with `hel
 
 Switching backends reinstalls the datastore; the migration runbook's default path carries the health event data over with a dump and restore, and only its opt-out clean path drops it. Follow the [MongoDB Bitnami to Percona migration runbook](../runbooks/mongodb-bitnami-to-percona-migration.md) for the full procedure, including the cleanup steps and the handling of in-flight quarantines.
 
+## Enabling Bitnami MongoDB on an existing installation
+
+The Bitnami backend generates its root password only during a fresh `helm install`. Turning the datastore on later, for example when you move from monitoring to cordon and drain, is a `helm upgrade`, and the chart stops before it deploys anything:
+
+```text
+PASSWORDS ERROR: You must provide your current passwords when upgrading the release.
+```
+
+The chart reads the `mongodb` Secret during template rendering, which happens before any Job or init container can create it. Create the Secret yourself first, then run the same upgrade again. The Percona backend does not have this behaviour.
+
+**Avoid this by creating the Secret at install time.** The Quick Start in the [README](https://github.com/NVIDIA/NVSentinel#quick-start) creates it alongside the namespace, before the first `helm upgrade --install`. The Secret costs nothing while the datastore is off, and it makes enabling the datastore later a single command. The rest of this section is for installations that already exist without it.
+
+### Check before you create anything
+
+The Secret must match the credentials already written into the database volume. Creating a new one over a live database locks NVSentinel out of its own data. Confirm both of these return nothing:
+
+```bash
+# 1. An existing credentials Secret. If this exists, keep it and skip to the upgrade.
+kubectl get secret mongodb -n nvsentinel
+
+# 2. Existing database volumes. If any exist, a database was deployed before.
+kubectl get pvc -n nvsentinel -l app.kubernetes.io/name=mongodb
+```
+
+If either returns a result, do not create the Secret. A Secret without a volume is safe to reuse as is. A volume without a Secret means the original credentials are lost; recover them from your backup, or follow the [migration runbook](../runbooks/mongodb-bitnami-to-percona-migration.md) to redeploy the datastore.
+
+### Create the Secret
+
+The Secret needs one key, `mongodb-root-password`. An empty Secret does not work: the chart treats a missing key the same as a missing Secret and fails with `The secret "mongodb" does not contain the key "mongodb-root-password"`.
+
+```bash
+kubectl create secret generic mongodb -n nvsentinel \
+  --from-literal=mongodb-root-password="$(openssl rand -hex 24)"
+```
+
+Then run your `helm upgrade` again, unchanged. The chart finds the Secret, reuses it, and keeps reusing it on every later upgrade. The root username stays `root`, set by `mongodb-store.mongodb.auth.rootUser`.
+
+Confirm the datastore came up:
+
+```bash
+kubectl get pods -n nvsentinel -l app.kubernetes.io/name=mongodb
+```
+
 ## Percona Operator
 
 Enable Percona when first installing NVSentinel. On a release that already runs Percona, keep these flags set on every upgrade. To move an existing Bitnami installation to Percona, do not change the flags in place; follow the [migration runbook](../runbooks/mongodb-bitnami-to-percona-migration.md) instead.

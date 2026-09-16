@@ -48,14 +48,19 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 
 ## Quick Start
 
-One command works for both a first install and every later upgrade. By default it only turns on health monitoring: it won't cordon a node, evict a pod, or reboot a machine, so it's safe to run anywhere. The flags below the command are everything you can layer on later; see [Adoption](#adoption) for what each one does.
+This block works for both a first install and every later upgrade; rerun it as is. By default it only turns on health monitoring: it won't cordon a node, evict a pod, or reboot a machine, so it's safe to run anywhere. The flags below the command are everything you can layer on later; see [Adoption](#adoption) for what each one does.
 
 ```bash
 NVSENTINEL_VERSION=v1.23.0
 
+kubectl create namespace nvsentinel --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl get secret mongodb -n nvsentinel >/dev/null 2>&1 || kubectl create secret generic mongodb -n nvsentinel \
+  --from-literal=mongodb-root-password="$(openssl rand -hex 24)"
+
 helm upgrade --install nvsentinel oci://ghcr.io/nvidia/nvsentinel \
   --version "$NVSENTINEL_VERSION" \
-  --namespace nvsentinel --create-namespace \
+  --namespace nvsentinel \
   --set podMonitor.enabled=false \
   --wait
 
