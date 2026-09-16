@@ -164,12 +164,6 @@ janitor:
                 - production
 ```
 
-A list of bare node names does not render. Helm reads `matchLabels` on each entry, so plain strings stop the install:
-
-```text
-can't evaluate field matchLabels in type interface {}
-```
-
 To exclude one node, select it through the `kubernetes.io/hostname` label that kubelet sets on every node. Read the value first, because it does not always match the node's object name:
 
 ```bash

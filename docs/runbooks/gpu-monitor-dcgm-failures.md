@@ -51,10 +51,6 @@ kubectl get pod -n nvsentinel {GPU_MONITOR_POD} -o yaml | grep -E "dcgm-addr|dcg
 | `external-hostengine` | `remote` | node-local, `localhost:5555` by default | `true` |
 | `embedded-mode` | `local-managed` | loopback, `localhost:5555` by default | absent |
 
-Do not use `--dcgm-k8s-service-enabled` to identify the mode. It renders from `global.dcgm.enabled`, which is `true` by default in every mode, so it does not tell the three apart.
-
-Do not use the presence of the GPU Operator DCGM service either. Both `external-hostengine` and `embedded-mode` run without that service, so its absence does not distinguish them.
-
 Then diagnose against the source the mode actually uses:
 
 - **`operator-service`** — continue to step 3. The DCGM pod and service are the dependency.

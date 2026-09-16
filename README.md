@@ -102,15 +102,11 @@ Uncomment these flags:
 NVSentinel will now cordon a faulty node, so your scheduler stops placing new work on it, and drain its existing workloads. Only want to cordon, without draining yet? Drop the `nodeDrainer` line above. This is as far as NVSentinel goes unless you also enable remediation below; a cordoned (and optionally drained) node stays isolated until you (or your own tooling) repair it.
 
 > [!NOTE]
-> **Small cluster? Disable the circuit breaker.** Fault quarantine ships a breaker that stops NVSentinel from cordoning too much of your fleet at once. It trips when the nodes cordoned in a 5-minute window reach 50% of your GPU nodes — on a cluster with one or two GPU nodes, that is the *first* cordon.
->
-> A tripped breaker pauses **all** event processing, including the healthy events that uncordon a recovered node. The node's health condition clears, but the node stays cordoned until you reset the breaker by hand. Raising the threshold does not rescue a single-GPU-node cluster, where one cordoned node is always the whole fleet.
+> **Small/Demo cluster? Disable the circuit breaker.** Fault quarantine ships a breaker that stops NVSentinel from cordoning more than 50% of your cluster at once. A tripped breaker pauses all event processing, including uncordoning a recovered node.
 >
 > ```bash
 > --set fault-quarantine.circuitBreaker.enabled=false   # test and demo clusters only
 > ```
->
-> Leave it enabled in production. See [Circuit Breaker](https://docs.nvidia.com/nvsentinel/components/circuit-breaker/) for thresholds and reset steps.
 
 ### 2b. Protect: Remediate
 
