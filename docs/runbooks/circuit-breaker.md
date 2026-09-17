@@ -74,9 +74,15 @@ Find nodes whose condition has cleared but which are still cordoned:
 ```bash
 kubectl get nodes | grep SchedulingDisabled
 
-# List each NVSentinel condition with its status. Every one must read False.
-kubectl get node {NODE_NAME} -o jsonpath='{range .status.conditions[?(@.status=="True")]}{.type}{"\t"}{.status}{"\n"}{end}' \
-  | grep -E "^(Gpu|SysLog)" || echo "no Gpu/SysLog condition is True"
+# List the node's Gpu/SysLog conditions that are still True. Every one must clear
+# before you uncordon. The lookup has to succeed first: an empty result from a
+# failed kubectl call is indistinguishable from a healthy node.
+if CONDITIONS=$(kubectl get node {NODE_NAME} \
+     -o jsonpath='{range .status.conditions[?(@.status=="True")]}{.type}{"\n"}{end}'); then
+  echo "$CONDITIONS" | grep -E "^(Gpu|SysLog)" || echo "no Gpu/SysLog condition is True"
+else
+  echo "node lookup failed - do not uncordon"
+fi
 ```
 
 Do not uncordon a node while any `Gpu` or `SysLog` condition is still `True`. Matching the condition name alone is not enough — a present condition can be either state, and uncordoning a node whose fault is still active puts workloads straight back onto broken hardware.

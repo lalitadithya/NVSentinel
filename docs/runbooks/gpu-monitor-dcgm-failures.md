@@ -77,9 +77,11 @@ Test DCGM connectivity from within the gpu-health-monitor pod:
 # Exec into the GPU monitor pod
 kubectl exec -it -n nvsentinel {GPU_MONITOR_POD} -- /bin/bash
 
-# Use the same address the pod was given in --dcgm-addr
-dcgmi discovery -l --host nvidia-dcgm.gpu-operator.svc:5555   # operator-service
-dcgmi discovery -l --host localhost:5555                      # external-hostengine or embedded-mode
+# Use the address the pod was given in --dcgm-addr, read in step 2. The values
+# below are the chart defaults; a custom global.dcgm.service.endpoint changes the
+# operator-service address, including its namespace.
+dcgmi discovery -l --host nvidia-dcgm.gpu-operator.svc:5555   # operator-service (default)
+dcgmi discovery -l --host localhost:5555                      # external-hostengine or embedded-mode (default)
 ```
 
 In `embedded-mode` the monitor starts the hostengine in-process and exposes it on pod-local loopback, so `dcgmi` inside this pod reaches that same engine. A failure here is node-local rather than a broken network hop, but it does not by itself say which part failed: the hostengine may not have started, or it started and cannot reach the GPUs because the driver, RuntimeClass, or container runtime is not giving the pod device access. The checks below separate the two.
@@ -88,13 +90,16 @@ If `dcgmi` produces no output at all and cannot be interrupted with Ctrl-C, stop
 
 If DCGM commands fail, check the items for your mode:
 
-- **`operator-service`** — DCGM service exists (`kubectl get svc -n gpu-operator | grep dcgm`); network policies allow traffic from the nvsentinel namespace to the gpu-operator namespace. Whether the DCGM pod must be on the *same* node depends on how the service routes:
+- **`operator-service`** — the configured DCGM service exists, and network policies allow traffic from the nvsentinel namespace to the one hosting it. Derive the Service name and namespace from `--dcgm-addr` rather than assuming the default:
 
   ```bash
-  kubectl get svc -n gpu-operator nvidia-dcgm -o jsonpath='{.spec.internalTrafficPolicy}{"\n"}'
-  ```
+  # --dcgm-addr is <service>.<namespace>.svc[.cluster.local]:<port>
+  # e.g. nvidia-dcgm.gpu-operator.svc:5555 -> service nvidia-dcgm, namespace gpu-operator
+  DCGM_SVC=nvidia-dcgm; DCGM_NS=gpu-operator      # replace from your --dcgm-addr
 
-  With `Local`, each monitor reaches only the DCGM pod on its own node, so a missing or unready DCGM pod there is the fault. With `Cluster` or unset, the service load-balances across nodes, so connectivity can succeed while the monitor reads another node's GPUs — check every DCGM pod rather than just the one co-located with the failing monitor. Leave [`connectivityFailureEscalationThreshold`](../configuration/gpu-health-monitor.md#connectivityfailureescalationthreshold) at `0` in that topology: escalating to a node reboot is not a valid response to a shared service or network fault.
+  kubectl get svc -n "$DCGM_NS" "$DCGM_SVC"
+  kubectl get svc -n "$DCGM_NS" "$DCGM_SVC" -o jsonpath='{.spec.internalTrafficPolicy}{"\n"}'
+  ```
 - **`external-hostengine`** — `nv-hostengine` is running on the node and listening on the configured port; the monitor pod has `hostNetwork: true`; a host firewall does not block the port.
 - **`embedded-mode`** — `runtimeClassName` names the cluster's NVIDIA RuntimeClass; the container is privileged; `nvidia-smi -L` inside the pod lists the GPUs. Without GPU and driver injection the embedded engine cannot start.
 

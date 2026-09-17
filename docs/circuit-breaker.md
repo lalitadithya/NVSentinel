@@ -83,7 +83,7 @@ Only nodes labeled `nvidia.com/gpu.present=true` are included when calculating t
 
 ### Small clusters
 
-The breaker trips when the nodes cordoned in the window reach `ceil(gpuNodes × percentage / 100)`. That formula rounds up, so the threshold falls to a single node on the smallest clusters:
+The breaker trips when the nodes cordoned in the window reach `ceil(gpuNodes × percentage / 100)`. That formula rounds up, so the threshold falls to a single node on the smallest clusters. The table below assumes the default `maxNodes: 0`, which leaves the percentage as the only bound:
 
 | GPU nodes | Trips at, `percentage: 50` | Trips at, `percentage: 100` |
 |---|---|---|
@@ -92,6 +92,8 @@ The breaker trips when the nodes cordoned in the window reach `ceil(gpuNodes × 
 | 3 | 2nd cordon | 3rd cordon |
 | 4 | 2nd cordon | 4th cordon |
 | 10 | 5th cordon | 10th cordon |
+
+With `maxNodes` set above `0`, the effective threshold is `min(ceil(gpuNodes × percentage / 100), maxNodes)`, capped at the fleet size. The lower bound wins, so `maxNodes: 1` trips on the first cordon at any percentage and every row above collapses to "1st cordon".
 
 On a one-GPU-node cluster, **no percentage avoids the trip**, because one cordoned node is always the whole fleet and the threshold is clamped to the fleet size. The first cordon trips the breaker, which then blocks the healthy event that would uncordon the node.
 

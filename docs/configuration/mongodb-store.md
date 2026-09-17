@@ -59,7 +59,7 @@ The chart reads the `mongodb` Secret during template rendering, which happens be
 
 ### Check before you create anything
 
-The Secret must match the credentials already written into the database volume. Creating a new one over a live database locks NVSentinel out of its own data. Confirm both of these return nothing:
+The Secret must match the credentials already written into the database volume. Creating a new one over a live database locks NVSentinel out of its own data. Run both checks, then read their output against the decision table below:
 
 ```bash
 # 1. A usable credentials Secret. Prints "present" only when the key exists and is
@@ -81,7 +81,7 @@ Read the results together:
 | yes | any | Keep the Secret as is and go straight to the upgrade. |
 | no | one or more | **Stop.** The volume holds credentials you no longer have. Creating a new Secret locks NVSentinel out of that data. |
 
-For the last row, recover the original password from your backup, or follow the [migration runbook](../runbooks/mongodb-bitnami-to-percona-migration.md) to redeploy the datastore and carry the health event data over.
+For the last row, recover the original password from your backup. The data-preserving path in the [migration runbook](../runbooks/mongodb-bitnami-to-percona-migration.md) needs that password too: its dump step reads the same `mongodb-root-password` key and stops if the key is missing. Without the password the only remaining option is the runbook's clean path, which drops the stored health events.
 
 ### Create the Secret
 
