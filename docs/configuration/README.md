@@ -100,7 +100,9 @@ Assign a priority class to avoid that. The split matches the node-scheduling val
 `priorityClassName` covers the node-level agents (the health monitor, metadata collector
 and NIC health monitor DaemonSets, the preflight image cache, plus platform-connectors),
 `systemPriorityClassName` covers the control-plane components (labeler,
-health-events-analyzer, fault-quarantine, node-drainer etc).
+health-events-analyzer, fault-quarantine, node-drainer etc). Both apply only to the
+components NVSentinel's own charts render — see [Scope](#scope-nvsentinel-components-only)
+below for the datastore, which needs its own key.
 
 ```yaml
 global:
@@ -123,6 +125,35 @@ The priority classes must already exist in the cluster. `system-node-critical` a
 A higher priority is necessary but not sufficient: preemption also needs an evictable
 lower-priority pod on a node that would then fit, and a class with `preemptionPolicy: Never`
 only improves queue order without evicting anything. Both built-in classes above preempt.
+
+#### Scope: NVSentinel components only
+
+Both globals cover the components NVSentinel's own charts render. **They do not reach the datastore.** The MongoDB and PostgreSQL pods come from vendored upstream charts that never read NVSentinel's `global` values, so setting the globals and rendering the release leaves those StatefulSets with no `priorityClassName`.
+
+This matters because the datastore is the component whose eviction hurts most: every module reconciles from it, so a preempted database stops fault detection across the whole cluster while the health monitors it starved keep their own high priority.
+
+Set the priority on the datastore through the upstream chart's own key:
+
+| Datastore | Key |
+|---|---|
+| Bitnami MongoDB | `mongodb-store.mongodb.priorityClassName` |
+| Percona (PSMDB) | `mongodb-store.psmdb-db.replsets.rs0.priorityClass` |
+| Bitnami PostgreSQL | `postgresql.primary.priorityClassName` |
+
+```yaml
+global:
+  priorityClassName: system-node-critical
+  systemPriorityClassName: system-cluster-critical
+
+# The datastore needs its own key — the globals above do not apply to it.
+mongodb-store:
+  mongodb:
+    priorityClassName: system-cluster-critical
+```
+
+Note that Percona spells it `priorityClass`, without `Name`, and that its key sits under the replica set. The Bitnami MongoDB chart takes separate keys for the arbiter and hidden members, `mongodb-store.mongodb.arbiter.priorityClassName` and `mongodb-store.mongodb.hidden.priorityClassName`, if you run them.
+
+The `create-mongodb-database` initialization Job accepts no priority class from any key. It runs once at install or upgrade and then completes, so it is scheduled against whatever capacity is free at that moment. On a saturated cluster this Job can stay Pending and hold up the install.
 
 ### Image Pull Secrets
 

@@ -66,6 +66,26 @@ The keys NVSentinel's own example sets are these:
 
 Anything else the upstream chart offers — replication, backups, resource presets, `ldap`, `audit`, network policy — is available and unmodified, but NVSentinel does not test it and the NVSentinel version does not pin your usage of it.
 
+### Pod priority
+
+`global.priorityClassName` and `global.systemPriorityClassName` do not apply to the PostgreSQL pods. The subchart does not read NVSentinel's `global` values, so a release rendered with only those globals leaves the PostgreSQL StatefulSet with no `priorityClassName`.
+
+Use the upstream key instead:
+
+```yaml
+postgresql:
+  primary:
+    priorityClassName: system-cluster-critical
+  # readReplicas:
+  #   priorityClassName: system-cluster-critical   # only with architecture: replication
+```
+
+The chart's default `architecture` is `standalone`, so `primary` is the only key that matters unless you switch to `replication`.
+
+Give the datastore at least the priority you give the modules that depend on it. A preempted datastore stops fault detection for the whole cluster, while the health monitors keep running at their own higher priority and cannot persist what they find.
+
+See [Pod Priority](./README.md#pod-priority) for the settings that do apply to NVSentinel's own components.
+
 ### Secrets
 
 Do not put a password in your values file. Create a Secret and point the chart at it:
