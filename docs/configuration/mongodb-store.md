@@ -353,6 +353,31 @@ mongodb-store:
   collectionExpirySeconds: 604800  # 7 days
 ```
 
+### SCRAM Application User
+
+The initialization Job creates a SCRAM-SHA-256 user with `readWrite` access to the NVSentinel database when `mongodb.tls.enabled` is `false`. With TLS on, MongoDB uses X.509 certificate users instead and this user is not created.
+
+```yaml
+mongodb-store:
+  scramAppUser:
+    username: nvsentinel
+    existingSecret: ""
+    passwordKey: "mongodb-root-password"
+```
+
+#### Parameters
+
+##### username
+Name of the application user created in MongoDB.
+
+##### existingSecret
+Secret holding this user's password. Empty falls back to the MongoDB root password secret, which works out of the box but gives the application the same credential as the administrator. For production, create a dedicated Secret and name it here.
+
+##### passwordKey
+Key inside that Secret holding the password.
+
+This only provisions the user. To use it, build `MONGODB_URI` from the username, the resolved password, and the host and database — creating the user does not change what the modules connect with.
+
 ### Initialization Job Placement
 
 Configures node placement for initialization jobs (applies to both backends).

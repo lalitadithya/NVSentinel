@@ -49,6 +49,39 @@ helm upgrade --install nvsentinel {chart-path} \
 
 Server TLS, `pg_hba`, and init scripts are under `postgresql.primary.*` (see the example values file).
 
+### The `postgresql` subchart is upstream
+
+Everything under `postgresql.` other than `postgresql.enabled` belongs to the vendored [Bitnami PostgreSQL chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql) (chart 15.5.38, PostgreSQL 16.4.0), not to NVSentinel. Its full value reference is the upstream chart's own documentation and `distros/kubernetes/nvsentinel/charts/postgresql/values.yaml`; this page does not repeat it.
+
+The keys NVSentinel's own example sets are these:
+
+| Key | Purpose |
+|---|---|
+| `postgresql.enabled` | Deploys the in-cluster instance. Set `false` for an external or cloud-managed server |
+| `postgresql.auth.database` | Database the modules connect to. Must match `global.datastore.connection.database` |
+| `postgresql.auth.postgresPassword` | Password for the `postgres` user. Supply it through `auth.existingSecret` rather than in values — see [Secrets](#secrets) below |
+| `postgresql.primary.tls.*` | Server certificate, key and CA, and the Secret holding them |
+| `postgresql.primary.pgHbaConfiguration` | Client authentication rules. This is what enforces certificate authentication |
+| `postgresql.primary.initdb.scripts` | Schema creation, run once on first start |
+
+Anything else the upstream chart offers — replication, backups, resource presets, `ldap`, `audit`, network policy — is available and unmodified, but NVSentinel does not test it and the NVSentinel version does not pin your usage of it.
+
+### Secrets
+
+Do not put a password in your values file. Create a Secret and point the chart at it:
+
+```yaml
+postgresql:
+  auth:
+    existingSecret: "postgresql-credentials"
+    secretKeys:
+      adminPasswordKey: "postgres-password"
+```
+
+The example values file ships `postgresPassword: "changeme"` to keep a first install working. Replace it before any real deployment.
+
+For the modules' own connection, set `global.datastore.credentialsFromSecret.name` to a Secret that defines `DATASTORE_PASSWORD`, rather than putting the password in values. See [External Datastore](../external-datastore.md) for the full credential model.
+
 ## Verify after install
 
 ```bash
