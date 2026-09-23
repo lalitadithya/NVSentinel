@@ -51,6 +51,8 @@ type ruleFakeDB struct {
 	queried []string
 }
 
+// Aggregate records the query, holds it on the gate when one is set, and then answers with the
+// scripted outcome of the rule that the marker stage names.
 func (f *ruleFakeDB) Aggregate(ctx context.Context, pipeline any) (client.Cursor, error) {
 	n := f.inFlight.Add(1)
 	defer f.inFlight.Add(-1)
@@ -88,6 +90,7 @@ func (f *ruleFakeDB) Aggregate(ctx context.Context, pipeline any) (client.Cursor
 	}
 }
 
+// ruleMarkerIn returns the rule name from the marker stage of pipeline, or "" if it has none.
 func ruleMarkerIn(pipeline any) string {
 	stages, _ := pipeline.([]map[string]any)
 	for _, stage := range stages {
@@ -107,6 +110,7 @@ type recordingConnector struct {
 	published []string
 }
 
+// HealthEventOccurredV1 records the check name of each event in the batch.
 func (c *recordingConnector) HealthEventOccurredV1(_ context.Context, in *protos.HealthEvents,
 	_ ...grpc.CallOption) (*emptypb.Empty, error) {
 	c.mu.Lock()
@@ -119,6 +123,7 @@ func (c *recordingConnector) HealthEventOccurredV1(_ context.Context, in *protos
 	return &emptypb.Empty{}, nil
 }
 
+// markerRule builds a rule whose only stage is the marker that ruleFakeDB uses to identify it.
 func markerRule(name string, enabled bool) config.HealthEventsAnalyzerRule {
 	return config.HealthEventsAnalyzerRule{
 		Name:              name,
@@ -128,6 +133,8 @@ func markerRule(name string, enabled bool) config.HealthEventsAnalyzerRule {
 	}
 }
 
+// newConcurrencyReconciler builds a reconciler over the fakes with the given rules and rule
+// concurrency.
 func newConcurrencyReconciler(db *ruleFakeDB, connector *recordingConnector,
 	rules []config.HealthEventsAnalyzerRule, ruleConcurrency int) *Reconciler {
 	return &Reconciler{
@@ -140,8 +147,9 @@ func newConcurrencyReconciler(db *ruleFakeDB, connector *recordingConnector,
 	}
 }
 
-// Concurrent evaluation must be observably identical to evaluating the rules one at a time:
-// the same events published, in the same order, with the same errors reported.
+// TestHandleEvent_ConcurrentRules_PublishSameEventsInRuleOrder checks that concurrent evaluation
+// is observably identical to evaluating the rules one at a time: the same events published, in
+// the same order, with the same errors reported.
 func TestHandleEvent_ConcurrentRules_PublishSameEventsInRuleOrder(t *testing.T) {
 	rules := []config.HealthEventsAnalyzerRule{
 		markerRule("rule-a", true),
@@ -186,6 +194,8 @@ func TestHandleEvent_ConcurrentRules_PublishSameEventsInRuleOrder(t *testing.T) 
 	}
 }
 
+// TestHandleEvent_ConcurrentRules_NeverExceedConcurrencyLimit holds every query and checks that
+// exactly the limit run at the same time, and never more.
 func TestHandleEvent_ConcurrentRules_NeverExceedConcurrencyLimit(t *testing.T) {
 	const (
 		ruleCount = 8
@@ -228,6 +238,9 @@ func TestHandleEvent_ConcurrentRules_NeverExceedConcurrencyLimit(t *testing.T) {
 	require.Empty(t, connector.published)
 }
 
+// TestHandleEvent_ConcurrentRules_CancelledContextStopsWithoutPublishing cancels the context
+// while queries are held, and checks that the cancellation reaches the caller and that nothing
+// is published.
 func TestHandleEvent_ConcurrentRules_CancelledContextStopsWithoutPublishing(t *testing.T) {
 	rules := make([]config.HealthEventsAnalyzerRule, 0, 6)
 	outcomes := map[string]string{}

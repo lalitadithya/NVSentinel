@@ -242,6 +242,9 @@ func (r *Reconciler) processHealthEvent(ctx context.Context, event *datamodels.H
 	return nil
 }
 
+// handleEvent runs the XID detector and every enabled rule against one event, and publishes a
+// derived event for each match. It reports whether it published anything, and returns all
+// failures together so that one failing rule does not hide the others.
 func (r *Reconciler) handleEvent(ctx context.Context, event *datamodels.HealthEventWithStatus) (bool, error) {
 	ctx, span := tracing.StartSpan(ctx, "health_events_analyzer.handle_event")
 	defer span.End()
@@ -431,6 +434,7 @@ func (r *Reconciler) processRulesConcurrently(ctx context.Context, span trace.Sp
 	return published, errs
 }
 
+// recordRuleError adds a rule_evaluation_error event that carries err to the event span.
 func recordRuleError(span trace.Span, err error) {
 	span.AddEvent("rule_evaluation_error", trace.WithAttributes(
 		attribute.String("health_events_analyzer.error.type", "rule_evaluation_error"),
