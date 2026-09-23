@@ -267,8 +267,18 @@ func TestLookupRulesGroupByGPUBeforeJoin(t *testing.T) {
 					assert.Contains(t, replaceRoot, `"$replaceRoot"`,
 						"rule %q must restore the document shape the $lookup expects", rule.Name)
 
+					// Parse rather than string-match, so a widened bound such as
+					// {"$limit": 2} cannot satisfy the assertion. The terminal stage
+					// carries no "this." reference, so an empty event resolves it.
 					lastStage := rule.Stage[len(rule.Stage)-1]
-					assert.Contains(t, lastStage, `"$limit"`,
+
+					limitParsed, err := parser.ParseSequenceStage(lastStage, datamodels.HealthEventWithStatus{})
+					require.NoError(t, err, "failed to parse terminal stage of rule %q", rule.Name)
+
+					limitVal, ok := limitParsed["$limit"]
+					require.True(t, ok, "rule %q must end in $limit, got %s", rule.Name, lastStage)
+
+					assert.Equal(t, float64(1), limitVal,
 						"rule %q must stop at the first match; the reconciler only tests "+
 							"whether the result is non-empty", rule.Name)
 				})
