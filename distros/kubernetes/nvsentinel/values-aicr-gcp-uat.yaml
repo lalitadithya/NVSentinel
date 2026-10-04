@@ -47,8 +47,5 @@ fault-quarantine:
   # validation:
   #   enabled: true
 
-node-drainer:
-  partialDrainEnabled: true
-
 labeler:
   assumeDriverInstalled: true
